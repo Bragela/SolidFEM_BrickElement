@@ -86,7 +86,11 @@ namespace SolidFEM_BrickElement
                 }
             }
 
+            //Create stiffness matrix
 
+            //Invert stiffness matrix
+
+            //u = Kr
 
 
             //Creates on element with ID, all nodes and mesh
