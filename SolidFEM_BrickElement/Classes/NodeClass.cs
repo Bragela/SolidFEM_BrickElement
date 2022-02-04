@@ -15,13 +15,15 @@ namespace SolidFEM_BrickElement
         public int GlobalID;
         public int LocalID;
         public Point3d Point;
+        public SupportClass support;
 
         //Constructors
-        public NodeClass(int _GlobalID, int _LocalID, Point3d _Point)
+        public NodeClass(int _GlobalID, int _LocalID, Point3d _Point, SupportClass _support)
         {
             GlobalID = _GlobalID;
             LocalID = _LocalID;
             Point = _Point;
+            support = _support;
         }
     }
 }

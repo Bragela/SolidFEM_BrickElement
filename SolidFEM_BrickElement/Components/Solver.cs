@@ -24,8 +24,7 @@ namespace SolidFEM_BrickElement
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddMeshParameter("Mesh", "M", "Mesh to be calculated", GH_ParamAccess.item);
-            pManager.AddGenericParameter("Forces","F","External loads on the box",GH_ParamAccess.item);
-            pManager.AddGenericParameter("Supports", "S", "The boxes supports", GH_ParamAccess.item);
+            pManager.AddVectorParameter("Forces","F","External loads on the box",GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -44,7 +43,10 @@ namespace SolidFEM_BrickElement
         {
             //inputs
             Mesh mesh = new Mesh();
+            Vector3d loadVec = new Vector3d();
             DA.GetData(0, ref mesh);
+            DA.GetData(1, ref loadVec);
+
 
             //code
 
@@ -53,14 +55,51 @@ namespace SolidFEM_BrickElement
             //Extract mesh vertices
             Point3d[] pts =  mesh.Vertices.ToPoint3dArray();
 
-            //For each point in mesh, create a node with ID and coordinates
+            //Create a list of ForceClass elements
+            List<ForceClass> forces = new List<ForceClass>();
+
+            //Create a force vector with all values set to zero
+            Vector3d zeroVec = new Vector3d(0,0,0);
+
+            SupportClass fixd = new SupportClass(false, false, false);
+            SupportClass free = new SupportClass(false, false, false);
+
+            //For each point in mesh, create a node with ID, coordinates and type of support (fixed along one side). Create a list of forcevectors
             for (int i = 0; i < pts.Length; i++)
             {
-                nodes.Add(new NodeClass(i, i, pts[i]));
+                if (i == 0 || i == 3 || i == 4 || i == 7)
+                {
+                    nodes.Add(new NodeClass(i, i, pts[i],fixd));
+                }
+                else
+                {
+                    nodes.Add(new NodeClass(i, i, pts[i], free));
+                }
+
+                if (i == 5 || i == 6)
+                {
+                    forces.Add(new ForceClass(loadVec, pts[i]));
+                }
+                else
+                {
+                    forces.Add(new ForceClass(zeroVec, pts[i]));
+                }
             }
+
+
+
 
             //Creates on element with ID, all nodes and mesh
             ElementClass elem = new ElementClass(0, nodes, mesh);
+
+
+
+
+
+
+
+
+
 
             //outputs
 

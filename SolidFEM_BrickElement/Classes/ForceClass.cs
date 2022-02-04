@@ -13,12 +13,16 @@ namespace SolidFEM_BrickElement
         //Properties
 
         public Vector3d loadVector;
+        public Point3d loadPoint;
 
 
         //Constructors
-        public ForceClass(Vector3d _loadVector)
+        public ForceClass(Vector3d _loadVector, Point3d _loadPoint)
         {
             loadVector = _loadVector;
+            loadPoint = _loadPoint;
         }
+
+
     }
 }
