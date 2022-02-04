@@ -6,6 +6,7 @@
     <Title>SolidFEM_BrickElement</Title>
     <Description>Description of SolidFEM_BrickElement</Description>
     <TargetExt>.gha</TargetExt>
+    <BaseOutputPath>C:\Program Files\Rhino 7\Plug-ins</BaseOutputPath>
   </PropertyGroup>
   
   <ItemGroup>

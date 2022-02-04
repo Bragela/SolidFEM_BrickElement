@@ -10,5 +10,15 @@ namespace SolidFEM_BrickElement
 {
     internal class ElementClass
     {
+        public int ID;
+        public List<NodeClass> Nodes;
+        public Mesh Mesh;
+
+        public ElementClass(int _ID, List<NodeClass> _Nodes, Mesh _mesh)
+        {
+            ID = _ID;
+            Nodes = _Nodes;
+            Mesh = _mesh;
+        }
     }
 }

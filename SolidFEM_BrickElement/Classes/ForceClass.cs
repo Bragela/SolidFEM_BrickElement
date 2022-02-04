@@ -8,5 +8,6 @@ namespace SolidFEM_BrickElement
 {
     internal class ForceClass
     {
+
     }
 }
