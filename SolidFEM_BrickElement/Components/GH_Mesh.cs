@@ -47,13 +47,15 @@ namespace SolidFEM_BrickElement
             //code
             Mesh mesh = new Mesh();
 
-            BoundingBox bB = br.GetBoundingBox(true);
+            BoundingBox bB = br.GetBoundingBox(true);       //Convert brep to boundbox to easily extract cornerpoints
 
+            //Add cornerpoints from brep to mesh vertices
             foreach (Point3d pt in bB.GetCorners())
             {
                 mesh.Vertices.Add(pt);
             }
             
+            //Construct mesh faces from vertices
             mesh.Faces.AddFace(new MeshFace(0, 1, 2, 3));
             mesh.Faces.AddFace(new MeshFace(0, 1, 5, 4));
             mesh.Faces.AddFace(new MeshFace(1, 2, 6, 5));

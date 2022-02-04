@@ -50,13 +50,16 @@ namespace SolidFEM_BrickElement
 
             List<NodeClass> nodes = new List<NodeClass>();
 
+            //Extract mesh vertices
             Point3d[] pts =  mesh.Vertices.ToPoint3dArray();
 
+            //For each point in mesh, create a node with ID and coordinates
             for (int i = 0; i < pts.Length; i++)
             {
                 nodes.Add(new NodeClass(i, i, pts[i]));
             }
 
+            //Creates on element with ID, all nodes and mesh
             ElementClass elem = new ElementClass(0, nodes, mesh);
 
             //outputs
