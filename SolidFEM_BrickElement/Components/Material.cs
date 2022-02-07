@@ -12,9 +12,9 @@ namespace SolidFEM_BrickElement
         /// Initializes a new instance of the Material class.
         /// </summary>
         public Material()
-          : base("Material", "Nickname",
+          : base("Material", "Material",
               "Description",
-              "Category", "Subcategory")
+              "SolidFEM", "SolidFEM_Brick")
         {
         }
 
@@ -23,6 +23,9 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            pManager.AddTextParameter("Name","N","Name of material",GH_ParamAccess.item);
+            pManager.AddNumberParameter("Youngs Modulus", "E", "", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Poissions ratio", "v", "", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -30,6 +33,7 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddGenericParameter("Material", "M", "MaterialClass object", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -38,6 +42,22 @@ namespace SolidFEM_BrickElement
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            //inputs
+            string Name = ("Name");
+            int eModulus = 200000;
+            double pRatio = 0.3;
+
+            DA.GetData(0, ref Name);
+            DA.GetData(1, ref eModulus);
+            DA.GetData(2, ref pRatio);
+
+            //code
+
+            MaterialClass material = new MaterialClass(Name, eModulus, pRatio);
+
+            //outputs
+
+            DA.SetData(0, material);
         }
 
         /// <summary>
@@ -58,7 +78,7 @@ namespace SolidFEM_BrickElement
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("8B452F32-97FA-4651-A06F-23D21259AF03"); }
+            get { return new Guid("E94D88BB-D602-4F5B-8F50-ED560BB525F9"); }
         }
     }
 }

@@ -14,7 +14,7 @@ namespace SolidFEM_BrickElement
         public Forces()
           : base("Forces", "Nickname",
               "Description",
-              "Category", "Subcategory")
+              "SolidFEM", "SolidFEM_Brick")
         {
         }
 

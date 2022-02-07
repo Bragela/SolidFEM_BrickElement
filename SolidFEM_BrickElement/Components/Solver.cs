@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 using Grasshopper.Kernel;
 using Rhino.Geometry;
+using MathNet.Numerics.LinearAlgebra;
+using System.Diagnostics;
+
 
 namespace SolidFEM_BrickElement
 {
@@ -33,6 +36,8 @@ namespace SolidFEM_BrickElement
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddGenericParameter("Element", "E", "The calculated element", GH_ParamAccess.item);
+            pManager.AddTextParameter("Matrix", "B", "", GH_ParamAccess.item);
+            pManager.AddBrepParameter("Box", "B", "", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -48,18 +53,20 @@ namespace SolidFEM_BrickElement
             DA.GetData(1, ref loadVec);
 
 
+
+
             //code
 
             List<NodeClass> nodes = new List<NodeClass>();
 
             //Extract mesh vertices
-            Point3d[] pts =  mesh.Vertices.ToPoint3dArray();
+            Point3d[] pts = mesh.Vertices.ToPoint3dArray();
 
             //Create a list of ForceClass elements
             List<ForceClass> forces = new List<ForceClass>();
 
             //Create a force vector with all values set to zero
-            Vector3d zeroVec = new Vector3d(0,0,0);
+            Vector3d zeroVec = new Vector3d(0, 0, 0);
 
             SupportClass fixd = new SupportClass(false, false, false);
             SupportClass free = new SupportClass(false, false, false);
@@ -69,7 +76,7 @@ namespace SolidFEM_BrickElement
             {
                 if (i == 0 || i == 3 || i == 4 || i == 7)
                 {
-                    nodes.Add(new NodeClass(i, i, pts[i],fixd));
+                    nodes.Add(new NodeClass(i, i, pts[i], fixd));
                 }
                 else
                 {
@@ -86,29 +93,270 @@ namespace SolidFEM_BrickElement
                 }
             }
 
+            Matrix<double> forceVec = Matrix<double>.Build.Dense(24, 1);
+              
+            for (int i = 0; i < forces.Count; i++)
+            {
+                ForceClass force = forces[i];
+                forceVec[i, 0] = force.loadVector.X;
+                forceVec[i + 8, 0] = force.loadVector.Y;
+                forceVec[i + 16, 0] = force.loadVector.Z;
+            }
+
+
             //Create stiffness matrix
 
-            //Invert stiffness matrix
+            MaterialClass steel = new MaterialClass("Steel", 210000, 0.3);
+
+            Point3d dummy = new Point3d(0, 0, 0);
+
+            Matrix<double> Bmat = ConstructBMatrix(nodes, dummy, steel);
+
+            Matrix<double> K = Bmat.Multiply(8);
+
+            //Inverse matrix
+
+            K.Inverse();
 
             //u = Kr
 
+            Matrix<double> u = K.Multiply(forceVec);
+
+            List<NodeClass> newNodes = nodes;
+            List<Point3d> newPoints = new List<Point3d>();
+
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                NodeClass node = nodes[i];
+                Point3d newPoint = new Point3d(u[i, 0], u[i + 8, 0], u[i + 16, 0]);
+
+                nodes[i].Point = newPoint;
+
+                newPoints.Add(newPoint);
+            }
 
             //Creates on element with ID, all nodes and mesh
             ElementClass elem = new ElementClass(0, nodes, mesh);
 
-
-
-
-
-
-
-
-
+            BoundingBox box = new BoundingBox(newPoints);
+            
 
             //outputs
 
+            Bmat.ToString();
+
             DA.SetData(0, elem);
+            DA.SetData(1, Bmat);
+            DA.SetData(2, box);
+
+            #region Methods
+
+            Point3d getGenCoords(int NodeNr)
+            {
+                Point3d GenCoords = new Point3d();
+
+                if (NodeNr == 0)
+                {
+                    GenCoords.X = 1;
+                    GenCoords.Y = -1;
+                    GenCoords.Z = -1;
+                }
+                else if (NodeNr == 1)
+                {
+                    GenCoords.X = 1;
+                    GenCoords.Y = 1;
+                    GenCoords.Z = -1;
+                }
+                else if (NodeNr == 2)
+                {
+                    GenCoords.X = -1;
+                    GenCoords.Y = 1;
+                    GenCoords.Z = -1;
+                }
+                else if (NodeNr == 3)
+                {
+                    GenCoords.X = -1;
+                    GenCoords.Y = -1;
+                    GenCoords.Z = -1;
+                }
+                else if (NodeNr == 4)
+                {
+                    GenCoords.X = 1;
+                    GenCoords.Y = -1;
+                    GenCoords.Z = 1;
+                }
+                else if (NodeNr == 5)
+                {
+                    GenCoords.X = 1;
+                    GenCoords.Y = 1;
+                    GenCoords.Z = 1;
+                }
+                else if (NodeNr == 6)
+                {
+                    GenCoords.X = -1;
+                    GenCoords.Y = 1;
+                    GenCoords.Z = 1;
+                }
+                else if (NodeNr == 7)
+                {
+                    GenCoords.X = -1;
+                    GenCoords.Y = -1;
+                    GenCoords.Z = 1;
+                }
+
+                return GenCoords;
+
+            }
+
+            Matrix<double> GetShapeFunctions(int nrNodes, double xi, double nu, double zeta)
+            {
+                Vector<double> N = Vector<double>.Build.Dense(nrNodes);
+                for (int i = 0; i < nrNodes; i++)
+                {
+                    Point3d genCoord = getGenCoords(i);
+
+                    double x = (1.0 / 8.0) * (1 + (genCoord.X * xi)) * (1 + (genCoord.Y * nu)) * (1 + (genCoord.Z * zeta));
+                    N[i] = x;
+                }
+
+                Matrix<double> ShapeMat = Matrix<double>.Build.Dense(3, 24);
+
+                for (int i = 0; i < ShapeMat.RowCount; i++)
+                {
+                    for (int j = 0; j < ShapeMat.ColumnCount; j++)
+                    {
+                        if (j <= 7 && i == 0)
+                        {
+                            ShapeMat[i, j] = N[j];
+                        }
+                        else if (j > 7 && j <= 15 && i == 1)
+                        {
+                            ShapeMat[i, j] = N[j - 8];
+                        }
+                        else if (j > 15 && j <= 23 && i == 2)
+                        {
+                            ShapeMat[i, j] = N[j - 16];
+                        }
+                        else
+                        {
+                            ShapeMat[i, j] = 0;
+                        }
+
+                    }
+                }
+
+                return ShapeMat;
+            }
+
+            Matrix<double> GetDerivatedShapeFunctions(int nrNodes, double xi, double nu, double zeta)
+            {
+                Vector<double> Nxi = Vector<double>.Build.Dense(nrNodes);
+                Vector<double> Nnu = Vector<double>.Build.Dense(nrNodes);
+                Vector<double> Nzeta = Vector<double>.Build.Dense(nrNodes);
+                for (int i = 0; i < nrNodes; i++)
+                {
+                    Point3d genCoord = getGenCoords(i);
+
+                    Nxi[i] = (1.0 / 8.0) * genCoord.X * (1 + genCoord.Y * nu) * (1 + genCoord.Z * zeta);
+                    Nnu[i] = (1.0 / 8.0) * genCoord.Y * (1 + genCoord.X * xi) * (1 + genCoord.Z * zeta);
+                    Nzeta[i] = (1.0 / 8.0) * genCoord.Z * (1 + genCoord.Y * nu) * (1 + genCoord.X * xi);
+                }
+
+                Matrix<double> ShapeMat = Matrix<double>.Build.Dense(3, 8);
+
+                for (int i = 0; i < ShapeMat.RowCount; i++)
+                {
+                    for (int j = 0; j < ShapeMat.ColumnCount; j++)
+                    {
+                        if (i == 0)
+                        {
+                            ShapeMat[i, j] = Nxi[j];
+                        }
+                        else if (i == 1)
+                        {
+                            ShapeMat[i, j] = Nnu[j];
+                        }
+                        else if (i == 2)
+                        {
+                            ShapeMat[i, j] = Nzeta[j];
+                        }
+                    }
+                }
+
+                return ShapeMat;
+            }
+
+            Matrix<double> ConstructBMatrix(List<NodeClass> _nodes, Point3d _dummy, MaterialClass material)
+            {
+                //Shape functions       Ni = 1/8(1+XiX)(1+NiN)(1+YiY)
+
+                //Create lists of coordinates
+
+                Matrix<double> coords_vert = Matrix<double>.Build.Dense(24, 1);
+                Matrix<double> coords_hor = Matrix<double>.Build.Dense(8, 3);
+
+                for (int i = 0; i < _nodes.Count; i++)
+                {
+                    NodeClass node = _nodes[i];
+                    coords_vert[i, 0] = node.Point.X;
+                    coords_vert[i + 8, 0] = node.Point.Y;
+                    coords_vert[i + 16, 0] = node.Point.Z;
+
+                    coords_hor[i, 0] = node.Point.X;
+                    coords_hor[i, 1] = node.Point.Y;
+                    coords_hor[i, 2] = node.Point.Z;
+                }
+
+                Matrix<double> shapeFunc = GetShapeFunctions(_nodes.Count, _dummy.X, _dummy.Y, _dummy.Z);
+                Matrix<double> shapeFuncDerGen = GetDerivatedShapeFunctions(_nodes.Count, _dummy.X, _dummy.Y, _dummy.Z);
+
+                Matrix<double> genCoords = shapeFunc.Multiply(coords_vert);
+
+                //Create Jacobi matrix
+
+                Matrix<double> jacobi = shapeFuncDerGen.Multiply(coords_hor);
+
+                //Jacobi determinant
+
+                double jacobi_det = jacobi.Determinant();
+
+                //Strain - disp relationship
+
+                Matrix<double> shapeFuncDerCart = jacobi.Inverse().Multiply(shapeFuncDerGen);
+
+                Matrix<double> B = Matrix<double>.Build.Dense(6, 24);
+
+                B.SetSubMatrix(0, 0, shapeFuncDerCart.SubMatrix(0, 1, 0, 8));
+                B.SetSubMatrix(1, 8, shapeFuncDerCart.SubMatrix(1, 1, 0, 8));
+                B.SetSubMatrix(2, 16, shapeFuncDerCart.SubMatrix(2, 1, 0, 8));
+                B.SetSubMatrix(3, 0, shapeFuncDerCart.SubMatrix(1, 1, 0, 8));
+                B.SetSubMatrix(3, 8, shapeFuncDerCart.SubMatrix(0, 1, 0, 8));
+                B.SetSubMatrix(4, 8, shapeFuncDerCart.SubMatrix(2, 1, 0, 8));
+                B.SetSubMatrix(4, 16, shapeFuncDerCart.SubMatrix(1, 1, 0, 8));
+                B.SetSubMatrix(5, 0, shapeFuncDerCart.SubMatrix(2, 1, 0, 8));
+                B.SetSubMatrix(5, 16, shapeFuncDerCart.SubMatrix(0, 1, 0, 8));
+
+                int E = material.eModulus;
+                double v = material.pRatio;
+
+                double alpha = (1 - v) * (E / ((1 + v) * (1 - 2 * v)));
+                double beta = v * (E / ((1 + v) * (1 - 2 * v)));
+                double gamma = ((1 - 2 * v) / 2) * (E / ((1 + v) * (1 - 2 * v)));
+
+                Matrix<double> C = Matrix<double>.Build.Dense(6, 6);
+
+                C[0, 0] = C[1, 1] = C[2, 2] = alpha;
+                C[0, 1] = C[0, 2] = C[1, 0] = C[1, 2] = C[2, 0] = C[2, 1] = beta;
+                C[3, 3] = C[4, 4] = C[5, 5] = gamma;
+
+                Matrix<double> integrand = B.Transpose().Multiply(C).Multiply(B).Multiply(jacobi_det);
+
+                return integrand;
+            }
         }
+        
+
+        #endregion
 
         /// <summary>
         /// Provides an Icon for the component.

@@ -8,7 +8,7 @@ using Rhino.Geometry;
 
 namespace SolidFEM_BrickElement
 {
-    internal class NodeClass
+    public class NodeClass
     {
         //Properties
 
@@ -16,6 +16,7 @@ namespace SolidFEM_BrickElement
         public int LocalID;
         public Point3d Point;
         public SupportClass support;
+        
 
         //Constructors
         public NodeClass(int _GlobalID, int _LocalID, Point3d _Point, SupportClass _support)
@@ -25,5 +26,9 @@ namespace SolidFEM_BrickElement
             Point = _Point;
             support = _support;
         }
+
+        
+        
+ 
     }
 }

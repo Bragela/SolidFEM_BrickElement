@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SolidFEM_BrickElement
 {
-    internal class SupportClass
+    public class SupportClass
     {
         //Properties
         // True = free, false = fixed
