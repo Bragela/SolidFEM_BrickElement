@@ -36,8 +36,10 @@ namespace SolidFEM_BrickElement
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddGenericParameter("Element", "E", "The calculated element", GH_ParamAccess.item);
-            pManager.AddTextParameter("Matrix", "B", "", GH_ParamAccess.item);
-            pManager.AddBrepParameter("Box", "B", "", GH_ParamAccess.item);
+            pManager.AddTextParameter("Matrix", "B", "", GH_ParamAccess.list);
+            pManager.AddPointParameter("Points", "P", "", GH_ParamAccess.list);
+            pManager.AddTextParameter("debug", "B", "", GH_ParamAccess.item);
+            // pManager.AddPointParameter("Box", "B", "", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -111,34 +113,39 @@ namespace SolidFEM_BrickElement
 
             MaterialClass steel = new MaterialClass("Steel", 210000, 0.3);
 
-            //Dummy point for evaluation of displacements
-            Point3d dummy = new Point3d(1, 0, 1);
+        
+           
 
             Matrix<double> K = ConstructStiffnessMatrix(nodes, steel);
+            Matrix<double> K_inv = K.Inverse(); 
+            double det_k = K.Determinant();
+            
 
-            //Inverse matrix
-
-            K.Inverse();
-
+            
             //u = Kr
 
-            Matrix<double> u = K.Multiply(forceVec);
+            Matrix<double> u = K_inv.Multiply(forceVec);
             Matrix<double> disp = Matrix<double>.Build.Dense(3, 8);
-
+            List<string> shapeFuncs = new List<string>();
 
             for (int i = 0; i < nodes.Count; i++)
             {
+                Point3d evalPt = getGenCoords(i);
                 NodeClass node = nodes[i];
                 if (node.support == fixd)
                 {
                     disp.SetColumn(i, Vector<double>.Build.Dense(3));
+                    
                 }
                 else
                 {
-                    Point3d evalPt = getGenCoords(i);
+                    
                     Matrix<double> shapeFunc = GetShapeFunctions(nodes.Count, evalPt.X, evalPt.Y, evalPt.Z);
                     disp.SetSubMatrix(0, i, shapeFunc.Multiply(u));
                 }
+                Matrix<double> _shapeFunc = GetShapeFunctions(nodes.Count, evalPt.X, evalPt.Y, evalPt.Z);
+                _shapeFunc.ToString();  
+                shapeFuncs.Add(_shapeFunc.ToString());
                 
             }
 
@@ -165,8 +172,9 @@ namespace SolidFEM_BrickElement
             u.ToString();
 
             DA.SetData(0, elem);
-            DA.SetData(1, disp);
-            DA.SetData(2, bb);
+            DA.SetDataList(1, K.ToString());
+            DA.SetDataList(2, dispPts);
+            DA.SetData(3, K_inv.ToString());
 
             #region Methods
 
@@ -311,13 +319,13 @@ namespace SolidFEM_BrickElement
                 return ShapeMat;
             }
 
-            Matrix<double> ConstructStiffnessMatrix(List<NodeClass> _nodes, MaterialClass material) //Construction of the B matrix
+            Matrix<double> ConstructStiffnessMatrix(List<NodeClass> _nodes, MaterialClass material, double a, double b, double c) //Construction of the B matrix
             {
                 //Shape functions       Ni = 1/8(1+XiX)(1+NiN)(1+YiY)
 
                 //Create lists of coordinates
 
-                Point3d _dummy = new Point3d(0,0,0);
+                
 
                 Matrix<double> coords_vert = Matrix<double>.Build.Dense(24, 1);
                 Matrix<double> coords_hor = Matrix<double>.Build.Dense(8, 3);
@@ -362,7 +370,7 @@ namespace SolidFEM_BrickElement
                 B.SetSubMatrix(5, 0, shapeFuncDerCart.SubMatrix(2, 1, 0, 8));
                 B.SetSubMatrix(5, 16, shapeFuncDerCart.SubMatrix(0, 1, 0, 8));
 
-                int E = material.eModulus;
+                double E = material.eModulus;
                 double v = material.pRatio;
 
                 //Create constants for easier construction of the C matrix
@@ -381,7 +389,13 @@ namespace SolidFEM_BrickElement
                 //Constructing the integrand by multiplying B transposed with C, then multiplied with B and lastly multiplied with the determinant of the jacobian
                 Matrix<double> integrand = B.Transpose().Multiply(C).Multiply(B).Multiply(jacobi_det);
 
-                Matrix<double> _k = 8 * integrand;
+                Matrix<double> _k = Matrix<double>.Build.Dense(24, 24);
+
+                for (int i = 0; i < nodes.Count; i++)
+                {
+                    Matrix<double> _k +=  integrand(1/sqrt(3), 1 / sqrt(3), 1 / sqrt(3),);
+                }
+                
 
                 return _k;
             }

@@ -13,7 +13,7 @@ namespace SolidFEM_BrickElement
         //Properties
 
         public string Name;
-        public int eModulus;
+        public double eModulus;
         public double pRatio;
 
         //Constructor
@@ -22,7 +22,7 @@ namespace SolidFEM_BrickElement
         {
 
         }
-        public MaterialClass(string _Name, int _eModulus, double _pRatio)
+        public MaterialClass(string _Name, double _eModulus, double _pRatio)
         {
             Name = _Name;
             eModulus = _eModulus;
