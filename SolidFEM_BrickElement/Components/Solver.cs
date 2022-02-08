@@ -36,7 +36,7 @@ namespace SolidFEM_BrickElement
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddGenericParameter("Element", "E", "The calculated element", GH_ParamAccess.item);
-            pManager.AddTextParameter("Matrix", "B", "", GH_ParamAccess.list);
+            pManager.AddTextParameter("Matrix", "B", "", GH_ParamAccess.item);
             pManager.AddPointParameter("Points", "P", "", GH_ParamAccess.list);
             pManager.AddTextParameter("debug", "B", "", GH_ParamAccess.item);
             // pManager.AddPointParameter("Box", "B", "", GH_ParamAccess.list);
@@ -113,10 +113,29 @@ namespace SolidFEM_BrickElement
 
             MaterialClass steel = new MaterialClass("Steel", 210000, 0.3);
 
-        
-           
+            double val = 1.0 / Math.Sqrt(3);
 
-            Matrix<double> K = ConstructStiffnessMatrix(nodes, steel);
+            Point3d pt_1 = new Point3d(val, val, val);
+            Point3d pt_2 = new Point3d(-val, val, val);
+            Point3d pt_3 = new Point3d(val, -val, val);
+            Point3d pt_4 = new Point3d(val, val, -val);
+            Point3d pt_5 = new Point3d(-val, -val, val);
+            Point3d pt_6 = new Point3d(val, -val, -val);
+            Point3d pt_7 = new Point3d(-val, val, -val);
+            Point3d pt_8 = new Point3d(-val, -val, -val);
+
+            List<Point3d> dummy_list = new List<Point3d>{pt_1, pt_2, pt_3, pt_4, pt_5, pt_6, pt_7, pt_8};
+            
+            Matrix<double> K = Matrix<double>.Build.Dense(24, 24);
+
+            for(int i = 0; i < 8; i++)
+            {
+                Matrix<double> k = ConstructStiffnessMatrix(nodes, steel, dummy_list[i]);
+                K += k;
+            }
+
+            Matrix<double> K_mat = K;
+
             Matrix<double> K_inv = K.Inverse(); 
             double det_k = K.Determinant();
             
@@ -135,18 +154,12 @@ namespace SolidFEM_BrickElement
                 if (node.support == fixd)
                 {
                     disp.SetColumn(i, Vector<double>.Build.Dense(3));
-                    
                 }
                 else
                 {
-                    
                     Matrix<double> shapeFunc = GetShapeFunctions(nodes.Count, evalPt.X, evalPt.Y, evalPt.Z);
                     disp.SetSubMatrix(0, i, shapeFunc.Multiply(u));
-                }
-                Matrix<double> _shapeFunc = GetShapeFunctions(nodes.Count, evalPt.X, evalPt.Y, evalPt.Z);
-                _shapeFunc.ToString();  
-                shapeFuncs.Add(_shapeFunc.ToString());
-                
+                } 
             }
 
             List<NodeClass> dispNodes = nodes;
@@ -172,9 +185,9 @@ namespace SolidFEM_BrickElement
             u.ToString();
 
             DA.SetData(0, elem);
-            DA.SetDataList(1, K.ToString());
+            DA.SetData(1, disp.ToString());
             DA.SetDataList(2, dispPts);
-            DA.SetData(3, K_inv.ToString());
+            DA.SetData(3, K.ToString());
 
             #region Methods
 
@@ -319,7 +332,7 @@ namespace SolidFEM_BrickElement
                 return ShapeMat;
             }
 
-            Matrix<double> ConstructStiffnessMatrix(List<NodeClass> _nodes, MaterialClass material, double a, double b, double c) //Construction of the B matrix
+            Matrix<double> ConstructStiffnessMatrix(List<NodeClass> _nodes, MaterialClass material, Point3d _dummy) //Construction of the B matrix
             {
                 //Shape functions       Ni = 1/8(1+XiX)(1+NiN)(1+YiY)
 
@@ -389,15 +402,10 @@ namespace SolidFEM_BrickElement
                 //Constructing the integrand by multiplying B transposed with C, then multiplied with B and lastly multiplied with the determinant of the jacobian
                 Matrix<double> integrand = B.Transpose().Multiply(C).Multiply(B).Multiply(jacobi_det);
 
-                Matrix<double> _k = Matrix<double>.Build.Dense(24, 24);
-
-                for (int i = 0; i < nodes.Count; i++)
-                {
-                    Matrix<double> _k +=  integrand(1/sqrt(3), 1 / sqrt(3), 1 / sqrt(3),);
-                }
+                
                 
 
-                return _k;
+                return integrand;
             }
 
             
