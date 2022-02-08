@@ -46,28 +46,29 @@ namespace SolidFEM_BrickElement
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            //inputs
+        //inputs
+
             Mesh mesh = new Mesh();
             Vector3d loadVec = new Vector3d();
             DA.GetData(0, ref mesh);
             DA.GetData(1, ref loadVec);
 
 
-
-
-            //code
-
-            List<NodeClass> nodes = new List<NodeClass>();
+        //code
 
             //Extract mesh vertices
             Point3d[] pts = mesh.Vertices.ToPoint3dArray();
 
-            //Create a list of ForceClass elements
+            //Create a list of ForceClass elements to be filled
+            List<NodeClass> nodes = new List<NodeClass>();
+
+            //Create a list of ForceClass elements to be filles
             List<ForceClass> forces = new List<ForceClass>();
 
             //Create a force vector with all values set to zero
             Vector3d zeroVec = new Vector3d(0, 0, 0);
 
+            //Create two types of supports, fixed and free, to be assigned to the correct nodes
             SupportClass fixd = new SupportClass(false, false, false);
             SupportClass free = new SupportClass(false, false, false);
 
@@ -93,6 +94,8 @@ namespace SolidFEM_BrickElement
                 }
             }
 
+            //Create a long (24x1) force vector to be used in calculation of displacements
+
             Matrix<double> forceVec = Matrix<double>.Build.Dense(24, 1);
               
             for (int i = 0; i < forces.Count; i++)
@@ -108,6 +111,7 @@ namespace SolidFEM_BrickElement
 
             MaterialClass steel = new MaterialClass("Steel", 210000, 0.3);
 
+            //Dummy point for evaluation of displacements
             Point3d dummy = new Point3d(0, 0, 0);
 
             Matrix<double> Bmat = ConstructBMatrix(nodes, dummy, steel);
@@ -122,6 +126,8 @@ namespace SolidFEM_BrickElement
 
             Matrix<double> u = K.Multiply(forceVec);
 
+
+            //Working with results (uferdig, må gjøres på nytt)
             List<NodeClass> newNodes = nodes;
             List<Point3d> newPoints = new List<Point3d>();
 
@@ -141,7 +147,7 @@ namespace SolidFEM_BrickElement
             BoundingBox box = new BoundingBox(newPoints);
             
 
-            //outputs
+        //outputs
 
             Bmat.ToString();
 
@@ -151,7 +157,7 @@ namespace SolidFEM_BrickElement
 
             #region Methods
 
-            Point3d getGenCoords(int NodeNr)
+            Point3d getGenCoords(int NodeNr) //Input node ID, and get the corresponding generalized coordinates
             {
                 Point3d GenCoords = new Point3d();
 
@@ -208,19 +214,22 @@ namespace SolidFEM_BrickElement
 
             }
 
-            Matrix<double> GetShapeFunctions(int nrNodes, double xi, double nu, double zeta)
+            Matrix<double> GetShapeFunctions(int nrNodes, double xi, double eta, double zeta) //Input number of nodes and the generalized point to be evaluated, and get the corresponding shape functions
             {
                 Vector<double> N = Vector<double>.Build.Dense(nrNodes);
+
+                //Construct the N0 vector with shape functions for the eight nodes
                 for (int i = 0; i < nrNodes; i++)
                 {
                     Point3d genCoord = getGenCoords(i);
 
-                    double x = (1.0 / 8.0) * (1 + (genCoord.X * xi)) * (1 + (genCoord.Y * nu)) * (1 + (genCoord.Z * zeta));
+                    double x = (1.0 / 8.0) * (1 + (genCoord.X * xi)) * (1 + (genCoord.Y * eta)) * (1 + (genCoord.Z * zeta));
                     N[i] = x;
                 }
 
                 Matrix<double> ShapeMat = Matrix<double>.Build.Dense(3, 24);
 
+                //Construct a diagonal matrix with N0 on the diagonal, and zero elsewhere
                 for (int i = 0; i < ShapeMat.RowCount; i++)
                 {
                     for (int j = 0; j < ShapeMat.ColumnCount; j++)
@@ -248,22 +257,25 @@ namespace SolidFEM_BrickElement
                 return ShapeMat;
             }
 
-            Matrix<double> GetDerivatedShapeFunctions(int nrNodes, double xi, double nu, double zeta)
+            Matrix<double> GetDerivatedShapeFunctions(int nrNodes, double xi, double eta, double zeta) //Derivate the shape functions with regards to xi, eta and zeta
             {
                 Vector<double> Nxi = Vector<double>.Build.Dense(nrNodes);
-                Vector<double> Nnu = Vector<double>.Build.Dense(nrNodes);
+                Vector<double> Neta = Vector<double>.Build.Dense(nrNodes);
                 Vector<double> Nzeta = Vector<double>.Build.Dense(nrNodes);
+
+                //Construct vectors with the shape functions derivated with regards to xi, eta then zeta
                 for (int i = 0; i < nrNodes; i++)
                 {
                     Point3d genCoord = getGenCoords(i);
 
-                    Nxi[i] = (1.0 / 8.0) * genCoord.X * (1 + genCoord.Y * nu) * (1 + genCoord.Z * zeta);
-                    Nnu[i] = (1.0 / 8.0) * genCoord.Y * (1 + genCoord.X * xi) * (1 + genCoord.Z * zeta);
-                    Nzeta[i] = (1.0 / 8.0) * genCoord.Z * (1 + genCoord.Y * nu) * (1 + genCoord.X * xi);
+                    Nxi[i] = (1.0 / 8.0) * genCoord.X * (1 + genCoord.Y * eta) * (1 + genCoord.Z * zeta);
+                    Neta[i] = (1.0 / 8.0) * genCoord.Y * (1 + genCoord.X * xi) * (1 + genCoord.Z * zeta);
+                    Nzeta[i] = (1.0 / 8.0) * genCoord.Z * (1 + genCoord.Y * eta) * (1 + genCoord.X * xi);
                 }
 
                 Matrix<double> ShapeMat = Matrix<double>.Build.Dense(3, 8);
 
+                //Construct a matrix with all derivated shape functions
                 for (int i = 0; i < ShapeMat.RowCount; i++)
                 {
                     for (int j = 0; j < ShapeMat.ColumnCount; j++)
@@ -274,7 +286,7 @@ namespace SolidFEM_BrickElement
                         }
                         else if (i == 1)
                         {
-                            ShapeMat[i, j] = Nnu[j];
+                            ShapeMat[i, j] = Neta[j];
                         }
                         else if (i == 2)
                         {
@@ -286,7 +298,7 @@ namespace SolidFEM_BrickElement
                 return ShapeMat;
             }
 
-            Matrix<double> ConstructBMatrix(List<NodeClass> _nodes, Point3d _dummy, MaterialClass material)
+            Matrix<double> ConstructBMatrix(List<NodeClass> _nodes, Point3d _dummy, MaterialClass material) //Construction of the B matrix
             {
                 //Shape functions       Ni = 1/8(1+XiX)(1+NiN)(1+YiY)
 
@@ -310,6 +322,7 @@ namespace SolidFEM_BrickElement
                 Matrix<double> shapeFunc = GetShapeFunctions(_nodes.Count, _dummy.X, _dummy.Y, _dummy.Z);
                 Matrix<double> shapeFuncDerGen = GetDerivatedShapeFunctions(_nodes.Count, _dummy.X, _dummy.Y, _dummy.Z);
 
+                //Multiplying cartesian coordinates with the shape functions to get generalized coordinates
                 Matrix<double> genCoords = shapeFunc.Multiply(coords_vert);
 
                 //Create Jacobi matrix
@@ -326,6 +339,7 @@ namespace SolidFEM_BrickElement
 
                 Matrix<double> B = Matrix<double>.Build.Dense(6, 24);
 
+                //Assigning correct values to the B matrix
                 B.SetSubMatrix(0, 0, shapeFuncDerCart.SubMatrix(0, 1, 0, 8));
                 B.SetSubMatrix(1, 8, shapeFuncDerCart.SubMatrix(1, 1, 0, 8));
                 B.SetSubMatrix(2, 16, shapeFuncDerCart.SubMatrix(2, 1, 0, 8));
@@ -339,24 +353,30 @@ namespace SolidFEM_BrickElement
                 int E = material.eModulus;
                 double v = material.pRatio;
 
+                //Create constants for easier construction of the C matrix
                 double alpha = (1 - v) * (E / ((1 + v) * (1 - 2 * v)));
                 double beta = v * (E / ((1 + v) * (1 - 2 * v)));
                 double gamma = ((1 - 2 * v) / 2) * (E / ((1 + v) * (1 - 2 * v)));
 
+                //Construct C matrix
                 Matrix<double> C = Matrix<double>.Build.Dense(6, 6);
 
                 C[0, 0] = C[1, 1] = C[2, 2] = alpha;
                 C[0, 1] = C[0, 2] = C[1, 0] = C[1, 2] = C[2, 0] = C[2, 1] = beta;
                 C[3, 3] = C[4, 4] = C[5, 5] = gamma;
 
+
+                //Constructing the integrand by multiplying B transposed with C, then multiplied with B and lastly multiplied with the determinant of the jacobian
                 Matrix<double> integrand = B.Transpose().Multiply(C).Multiply(B).Multiply(jacobi_det);
 
                 return integrand;
             }
-        }
-        
 
-        #endregion
+            #endregion
+        }
+
+
+
 
         /// <summary>
         /// Provides an Icon for the component.

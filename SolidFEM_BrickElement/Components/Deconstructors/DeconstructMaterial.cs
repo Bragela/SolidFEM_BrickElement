@@ -4,17 +4,17 @@ using System.Collections.Generic;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
-namespace SolidFEM_BrickElement
+namespace SolidFEM_BrickElement.Components.Deconstructors
 {
-    public class Forces : GH_Component
+    public class DeconstructMaterial : GH_Component
     {
         /// <summary>
-        /// Initializes a new instance of the Forces class.
+        /// Initializes a new instance of the DeconstructMaterial class.
         /// </summary>
-        public Forces()
-          : base("Forces", "Nickname",
+        public DeconstructMaterial()
+          : base("DeconstructMaterial", "Nickname",
               "Description",
-              "SolidFEM", "SolidFEM_Brick")
+              "Category", "Subcategory")
         {
         }
 
@@ -58,7 +58,7 @@ namespace SolidFEM_BrickElement
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("25E951CE-15DE-4F53-9049-BCA116C6FA11"); }
+            get { return new Guid("6F40B140-3093-4003-9DA2-5EFF8A831753"); }
         }
     }
 }

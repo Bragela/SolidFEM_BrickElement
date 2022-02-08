@@ -4,15 +4,15 @@ using System.Collections.Generic;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
-namespace SolidFEM_BrickElement
+namespace SolidFEM_BrickElement.Components.Deconstructors
 {
-    public class BoundaryConditions : GH_Component
+    public class DeconstructLoad : GH_Component
     {
         /// <summary>
-        /// Initializes a new instance of the BoundaryConditions class.
+        /// Initializes a new instance of the DeconstructLoad class.
         /// </summary>
-        public BoundaryConditions()
-          : base("BoundaryConditions", "Nickname",
+        public DeconstructLoad()
+          : base("DeconstructLoad", "Nickname",
               "Description",
               "Category", "Subcategory")
         {
@@ -58,7 +58,7 @@ namespace SolidFEM_BrickElement
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("55C68309-06A1-4CDB-B0EA-CC58BD89BB1A"); }
+            get { return new Guid("98A5B2EA-3248-4B14-BE2E-4F4DC3313243"); }
         }
     }
 }
