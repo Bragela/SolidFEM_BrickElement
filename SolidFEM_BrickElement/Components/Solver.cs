@@ -63,7 +63,7 @@ namespace SolidFEM_BrickElement
             List<NodeClass> nodes = new List<NodeClass>();
 
             //Create a list of ForceClass elements to be filles
-            List<ForceClass> forces = new List<ForceClass>();
+            List<LoadClass> forces = new List<LoadClass>();
 
             //Create a force vector with all values set to zero
             Vector3d zeroVec = new Vector3d(0, 0, 0);
@@ -86,11 +86,11 @@ namespace SolidFEM_BrickElement
 
                 if (i == 5 || i == 6)
                 {
-                    forces.Add(new ForceClass(loadVec, pts[i]));
+                    forces.Add(new LoadClass(loadVec, pts[i]));
                 }
                 else
                 {
-                    forces.Add(new ForceClass(zeroVec, pts[i]));
+                    forces.Add(new LoadClass(zeroVec, pts[i]));
                 }
             }
 
@@ -100,7 +100,7 @@ namespace SolidFEM_BrickElement
               
             for (int i = 0; i < forces.Count; i++)
             {
-                ForceClass force = forces[i];
+                LoadClass force = forces[i];
                 forceVec[i, 0] = force.loadVector.X;
                 forceVec[i + 8, 0] = force.loadVector.Y;
                 forceVec[i + 16, 0] = force.loadVector.Z;

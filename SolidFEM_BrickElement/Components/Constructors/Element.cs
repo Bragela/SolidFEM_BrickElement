@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
-namespace SolidFEM_BrickElement.Components
+namespace SolidFEM_BrickElement
 {
     public class Element : GH_Component
     {
@@ -12,9 +12,9 @@ namespace SolidFEM_BrickElement.Components
         /// Initializes a new instance of the Element class.
         /// </summary>
         public Element()
-          : base("Element", "Nickname",
+          : base("Element", "Element",
               "Description",
-              "Category", "Subcategory")
+              "SolidFEM", "SolidFEM_Brick")
         {
         }
 
@@ -23,6 +23,9 @@ namespace SolidFEM_BrickElement.Components
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            pManager.AddNumberParameter("ID", "ID", "Global ID of the element", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Nodes","N","List of the elements nodes",GH_ParamAccess.list);
+            pManager.AddMeshParameter("Mesh", "M", "The elements mesh", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -30,6 +33,7 @@ namespace SolidFEM_BrickElement.Components
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddGenericParameter("Element", "E", "ElementClass object", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -38,6 +42,21 @@ namespace SolidFEM_BrickElement.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            //inputs
+            int ID = 0;
+            List<NodeClass> nodes = new List<NodeClass>();
+            Mesh mesh = new Mesh();
+
+            DA.GetData(0, ref ID);
+            DA.GetData(1, ref nodes);
+            DA.GetData(2, ref mesh);
+
+            //code
+
+            ElementClass Element = new ElementClass(ID, nodes, mesh);
+
+            //outputs
+            DA.SetData(0, Element);
         }
 
         /// <summary>

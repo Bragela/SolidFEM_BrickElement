@@ -17,6 +17,11 @@ namespace SolidFEM_BrickElement
 
         //Constructors
 
+        public SupportClass()
+        {
+
+        }
+
         public SupportClass(Boolean _Tx, Boolean _Ty, Boolean _Tz)
         {
             Tx = _Tx;

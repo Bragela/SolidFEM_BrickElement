@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
-namespace SolidFEM_BrickElement.Components
+namespace SolidFEM_BrickElement
 {
     public class Support : GH_Component
     {
@@ -14,7 +14,7 @@ namespace SolidFEM_BrickElement.Components
         public Support()
           : base("Support", "Nickname",
               "Description",
-              "Category", "Subcategory")
+              "SolidFEM", "SolidFEM_Brick")
         {
         }
 
@@ -23,6 +23,9 @@ namespace SolidFEM_BrickElement.Components
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            pManager.AddBooleanParameter("Translation X", "Tx", "Translation in X direction (true = free, false = fixed)", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Translation Y", "Ty", "Translation in Y direction (true = free, false = fixed)", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Translation Z", "Tz", "Translation in Z direction (true = free, false = fixed)", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -30,6 +33,7 @@ namespace SolidFEM_BrickElement.Components
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddGenericParameter("Support", "S", "A SupportClass object", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -38,6 +42,20 @@ namespace SolidFEM_BrickElement.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            //inputs
+            Boolean Tx = true;
+            Boolean Ty = true;
+            Boolean Tz = true;
+
+            DA.GetData(0, ref Tx);
+            DA.GetData(1, ref Ty);
+            DA.GetData(2, ref Tz);
+
+            //code
+            SupportClass sup = new SupportClass(Tx, Ty, Tz);
+
+            //outputs
+            DA.SetData(0, sup);
         }
 
         /// <summary>

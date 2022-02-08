@@ -18,6 +18,10 @@ namespace SolidFEM_BrickElement
 
         //Constructor
 
+        public MaterialClass()
+        {
+
+        }
         public MaterialClass(string _Name, int _eModulus, double _pRatio)
         {
             Name = _Name;

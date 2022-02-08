@@ -6,13 +6,13 @@ using Rhino.Geometry;
 
 namespace SolidFEM_BrickElement
 {
-    public class Result : GH_Component
+    public class Node : GH_Component
     {
         /// <summary>
-        /// Initializes a new instance of the Result class.
+        /// Initializes a new instance of the Node class.
         /// </summary>
-        public Result()
-          : base("Result", "Nickname",
+        public Node()
+          : base("Node", "Node",
               "Description",
               "SolidFEM", "SolidFEM_Brick")
         {
@@ -23,6 +23,10 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            pManager.AddNumberParameter("GlobalID", "GID", "Global ID of the node", GH_ParamAccess.item);
+            pManager.AddNumberParameter("LocalID", "LID", "Local ID of the node", GH_ParamAccess.item);
+            pManager.AddPointParameter("Point","P","The point coordinates of the node",GH_ParamAccess.item);
+            pManager.AddGenericParameter("Support", "S", "The support type of the node, a SupportClass object", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -30,6 +34,7 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddGenericParameter("Node", "N", "A NodeClass object", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -38,6 +43,24 @@ namespace SolidFEM_BrickElement
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            //inputs
+            int gID = 0;
+            int lID = 0;
+            Point3d pt = new Point3d();
+            SupportClass sup = new SupportClass();
+
+            DA.GetData(0, ref gID);
+            DA.GetData(1, ref lID);
+            DA.GetData(2, ref pt);
+            DA.GetData(3, ref sup);
+
+
+            //code
+
+            NodeClass node = new NodeClass(gID, lID, pt, sup);
+
+            //outputs
+            DA.SetData(0, node);
         }
 
         /// <summary>
@@ -58,7 +81,7 @@ namespace SolidFEM_BrickElement
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("6B0768E7-A517-43CA-9B2A-3E660E7C828B"); }
+            get { return new Guid("207C44BE-BF29-4795-9DAF-19F0831FF008"); }
         }
     }
 }

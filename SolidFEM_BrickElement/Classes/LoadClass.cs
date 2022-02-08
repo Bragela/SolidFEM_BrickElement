@@ -8,7 +8,7 @@ using Rhino.Geometry;
 
 namespace SolidFEM_BrickElement
 {
-    internal class ForceClass
+    internal class LoadClass
     {
         //Properties
 
@@ -17,7 +17,12 @@ namespace SolidFEM_BrickElement
 
 
         //Constructors
-        public ForceClass(Vector3d _loadVector, Point3d _loadPoint)
+
+        public LoadClass()
+        {
+
+        }
+        public LoadClass(Vector3d _loadVector, Point3d _loadPoint)
         {
             loadVector = _loadVector;
             loadPoint = _loadPoint;

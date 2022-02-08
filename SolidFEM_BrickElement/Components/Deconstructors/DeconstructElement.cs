@@ -12,9 +12,9 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
         /// Initializes a new instance of the DeconstructElement class.
         /// </summary>
         public DeconstructElement()
-          : base("DeconstructElement", "Nickname",
+          : base("DeconstructElement", "DeconstructElement",
               "Description",
-              "Category", "Subcategory")
+              "SolidFEM", "SolidFEM_Brick")
         {
         }
 
@@ -23,6 +23,7 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            pManager.AddGenericParameter("Element", "E", "A ElementClass object", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -30,6 +31,9 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddNumberParameter("Global ID", "ID", "Global ID of the element", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Nodes", "N", "The nodes of the element", GH_ParamAccess.list);
+            pManager.AddMeshParameter("Mesh", "M", "The elements mesh", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -38,6 +42,15 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            //inputs
+            ElementClass elem = new ElementClass();
+
+            DA.GetData(0, ref elem);
+
+            //outputs
+            DA.SetData(0, elem.ID);
+            DA.SetData(1, elem.Nodes);
+            DA.SetData(2, elem.Mesh);
         }
 
         /// <summary>

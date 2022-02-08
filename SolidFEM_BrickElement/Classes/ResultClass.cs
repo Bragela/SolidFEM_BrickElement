@@ -6,12 +6,7 @@ using System.Threading.Tasks;
 
 namespace SolidFEM_BrickElement
 {
-    internal class AssemblyClass
+    internal class ResultClass
     {
-        //Properties
-
-        
-
-        //Constructors
     }
 }

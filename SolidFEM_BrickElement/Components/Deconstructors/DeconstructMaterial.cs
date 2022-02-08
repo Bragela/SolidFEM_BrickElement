@@ -14,7 +14,7 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
         public DeconstructMaterial()
           : base("DeconstructMaterial", "Nickname",
               "Description",
-              "Category", "Subcategory")
+              "SolidFEM", "SolidFEM_Brick")
         {
         }
 

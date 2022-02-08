@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
-namespace SolidFEM_BrickElement.Components
+namespace SolidFEM_BrickElement
 {
     public class Load : GH_Component
     {
@@ -12,9 +12,9 @@ namespace SolidFEM_BrickElement.Components
         /// Initializes a new instance of the Load class.
         /// </summary>
         public Load()
-          : base("Load", "Nickname",
+          : base("Load", "Load",
               "Description",
-              "Category", "Subcategory")
+              "SolidFEM", "SolidFEM_Brick")
         {
         }
 
@@ -23,6 +23,8 @@ namespace SolidFEM_BrickElement.Components
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            pManager.AddVectorParameter("Vector", "V", "Vector containing forces in X, Y and Z direction", GH_ParamAccess.item);
+            pManager.AddPointParameter("Point","P","The point where the load is applied",GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -30,6 +32,7 @@ namespace SolidFEM_BrickElement.Components
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddGenericParameter("Load", "L", "LoadClass object", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -38,6 +41,19 @@ namespace SolidFEM_BrickElement.Components
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            //inputs
+            Vector3d vec = new Vector3d();
+            Point3d pt = new Point3d();
+
+            DA.GetData(0, ref vec);
+            DA.GetData(1, ref pt);
+
+            //code
+
+            LoadClass Load = new LoadClass(vec, pt);
+
+            //outputs
+            DA.SetData(0, Load);
         }
 
         /// <summary>

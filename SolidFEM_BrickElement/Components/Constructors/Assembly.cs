@@ -6,13 +6,13 @@ using Rhino.Geometry;
 
 namespace SolidFEM_BrickElement
 {
-    public class Result : GH_Component
+    public class Assembly : GH_Component
     {
         /// <summary>
-        /// Initializes a new instance of the Result class.
+        /// Initializes a new instance of the Assembly class.
         /// </summary>
-        public Result()
-          : base("Result", "Nickname",
+        public Assembly()
+          : base("Assembly", "Assembly",
               "Description",
               "SolidFEM", "SolidFEM_Brick")
         {
@@ -58,7 +58,7 @@ namespace SolidFEM_BrickElement
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("6B0768E7-A517-43CA-9B2A-3E660E7C828B"); }
+            get { return new Guid("7A48565A-B41D-4F11-B7B2-6D37AE2491E8"); }
         }
     }
 }
