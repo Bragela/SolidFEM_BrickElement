@@ -70,7 +70,7 @@ namespace SolidFEM_BrickElement
 
             //Create two types of supports, fixed and free, to be assigned to the correct nodes
             SupportClass fixd = new SupportClass(false, false, false);
-            SupportClass free = new SupportClass(false, false, false);
+            SupportClass free = new SupportClass(true, true, true);
 
             //For each point in mesh, create a node with ID, coordinates and type of support (fixed along one side). Create a list of forcevectors
             for (int i = 0; i < pts.Length; i++)
@@ -112,11 +112,9 @@ namespace SolidFEM_BrickElement
             MaterialClass steel = new MaterialClass("Steel", 210000, 0.3);
 
             //Dummy point for evaluation of displacements
-            Point3d dummy = new Point3d(0, 0, 0);
+            Point3d dummy = new Point3d(1, 0, 1);
 
-            Matrix<double> Bmat = ConstructBMatrix(nodes, dummy, steel);
-
-            Matrix<double> K = Bmat.Multiply(8);
+            Matrix<double> K = ConstructStiffnessMatrix(nodes, steel);
 
             //Inverse matrix
 
@@ -125,7 +123,27 @@ namespace SolidFEM_BrickElement
             //u = Kr
 
             Matrix<double> u = K.Multiply(forceVec);
+            Matrix<double> disp = Matrix<double>.Build.Dense(3, 8);
 
+
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                NodeClass node = nodes[i];
+                if (node.support == fixd)
+                {
+                    disp.SetColumn(i, Vector<double>.Build.Dense(3));
+                }
+                else
+                {
+                    Point3d evalPt = getGenCoords(i);
+                    Matrix<double> shapeFunc = GetShapeFunctions(nodes.Count, evalPt.X, evalPt.Y, evalPt.Z);
+                    disp.SetSubMatrix(0, i, shapeFunc.Multiply(u));
+                }
+                
+            }
+
+            
+            /*
 
             //Working with results (uferdig, må gjøres på nytt)
             List<NodeClass> newNodes = nodes;
@@ -140,20 +158,20 @@ namespace SolidFEM_BrickElement
 
                 newPoints.Add(newPoint);
             }
-
+            */
             //Creates on element with ID, all nodes and mesh
             ElementClass elem = new ElementClass(0, nodes, mesh);
 
-            BoundingBox box = new BoundingBox(newPoints);
+            
             
 
         //outputs
 
-            Bmat.ToString();
+            u.ToString();
 
             DA.SetData(0, elem);
-            DA.SetData(1, Bmat);
-            DA.SetData(2, box);
+            DA.SetData(1, u);
+            //DA.SetData(2, u);
 
             #region Methods
 
@@ -298,11 +316,13 @@ namespace SolidFEM_BrickElement
                 return ShapeMat;
             }
 
-            Matrix<double> ConstructBMatrix(List<NodeClass> _nodes, Point3d _dummy, MaterialClass material) //Construction of the B matrix
+            Matrix<double> ConstructStiffnessMatrix(List<NodeClass> _nodes, MaterialClass material) //Construction of the B matrix
             {
                 //Shape functions       Ni = 1/8(1+XiX)(1+NiN)(1+YiY)
 
                 //Create lists of coordinates
+
+                Point3d _dummy = new Point3d(0,0,0);
 
                 Matrix<double> coords_vert = Matrix<double>.Build.Dense(24, 1);
                 Matrix<double> coords_hor = Matrix<double>.Build.Dense(8, 3);
@@ -321,9 +341,6 @@ namespace SolidFEM_BrickElement
 
                 Matrix<double> shapeFunc = GetShapeFunctions(_nodes.Count, _dummy.X, _dummy.Y, _dummy.Z);
                 Matrix<double> shapeFuncDerGen = GetDerivatedShapeFunctions(_nodes.Count, _dummy.X, _dummy.Y, _dummy.Z);
-
-                //Multiplying cartesian coordinates with the shape functions to get generalized coordinates
-                Matrix<double> genCoords = shapeFunc.Multiply(coords_vert);
 
                 //Create Jacobi matrix
 
@@ -369,8 +386,12 @@ namespace SolidFEM_BrickElement
                 //Constructing the integrand by multiplying B transposed with C, then multiplied with B and lastly multiplied with the determinant of the jacobian
                 Matrix<double> integrand = B.Transpose().Multiply(C).Multiply(B).Multiply(jacobi_det);
 
-                return integrand;
+                Matrix<double> _k = 8 * integrand;
+
+                return _k;
             }
+
+            
 
             #endregion
         }
