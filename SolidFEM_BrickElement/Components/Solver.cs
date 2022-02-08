@@ -142,23 +142,18 @@ namespace SolidFEM_BrickElement
                 
             }
 
-            
-            /*
-
-            //Working with results (uferdig, må gjøres på nytt)
-            List<NodeClass> newNodes = nodes;
-            List<Point3d> newPoints = new List<Point3d>();
+            List<NodeClass> dispNodes = nodes;
+            List<Point3d> dispPts = new List<Point3d>();
 
             for (int i = 0; i < nodes.Count; i++)
             {
-                NodeClass node = nodes[i];
-                Point3d newPoint = new Point3d(u[i, 0], u[i + 8, 0], u[i + 16, 0]);
-
-                nodes[i].Point = newPoint;
-
-                newPoints.Add(newPoint);
+                NodeClass node = dispNodes[i];
+                Point3d pt = new Point3d(node.Point.X + disp[0, i], node.Point.Y + disp[1, i], node.Point.Z + disp[2, i]);
+                dispPts.Add(pt);
             }
-            */
+
+            BoundingBox bb = new BoundingBox(dispPts);
+            
             //Creates on element with ID, all nodes and mesh
             ElementClass elem = new ElementClass(0, nodes, mesh);
 
@@ -170,8 +165,8 @@ namespace SolidFEM_BrickElement
             u.ToString();
 
             DA.SetData(0, elem);
-            DA.SetData(1, u);
-            //DA.SetData(2, u);
+            DA.SetData(1, disp);
+            DA.SetData(2, bb);
 
             #region Methods
 
