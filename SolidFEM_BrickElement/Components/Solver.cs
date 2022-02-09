@@ -146,53 +146,63 @@ namespace SolidFEM_BrickElement
                 K += k;
             }
 
-            int _count = 0;
+            int cnt = 0;
 
-            for(int i = 0; i<K.RowCount; i += 3)
+            for (int i = 0; i<7; i++)
             {
-                NodeClass node = nodes[_count];
+                NodeClass node = nodes[i];
 
                 if (node.support == fixd)
                 {
-                    K.ClearRow(i);
-                    K.ClearRow(i+1);
-                    K.ClearRow(i+2);
-
-                    K.ClearColumn(i);
-                    K.ClearColumn(i+1);
-                    K.ClearColumn(i+2);
+                    for (int j = 0; j < 2; j++)
+                    {
+                        K = K.RemoveRow(cnt).RemoveColumn(cnt);
+                        forceVec = forceVec.RemoveRow(cnt);
+                    }
+                    cnt -= 3;
                 }
-            _count += 1;
+                cnt += 3;
             }
-
-
-            Matrix<double> K_mat = K;
 
             Matrix<double> K_inv = K.Inverse(); 
             
-
-            
             //u = Kr
 
-            Matrix<double> u = K_inv.Multiply(forceVec);
+            Matrix<double> u_red = K_inv.Multiply(forceVec);
+            Matrix<double> u = Matrix<double>.Build.Dense(24,1);
+
+            int node_nr = 0;
+            int u_cnt = 0;
+
+            for(int i = 0; i < u.RowCount; i+=3)
+            {
+                NodeClass node = nodes[node_nr];
+                if (node.support == free)
+                {
+                    u[i,0] = u_red[u_cnt,0];
+                    u[i+1,0] = u_red[u_cnt+1,0];
+                    u[i + 2, 0] = u_red[u_cnt + 2, 0];
+
+                    u_cnt += 3;
+                }
+                node_nr += 1;
+            }
+
+
             Matrix<double> disp = Matrix<double>.Build.Dense(3, 8);
 
-            /*
+            
             for (int i = 0; i < nodes.Count; i++)
             {
                 Point3d evalPt = getGenCoords(i);
                 NodeClass node = nodes[i];
-                if (node.support == fixd)
-                {
-                    disp.SetColumn(i, Vector<double>.Build.Dense(3));
-                }
-                else
+                if (node.support == free)
                 {
                     Matrix<double> shapeFunc = GetShapeFunctions(nodes.Count, evalPt.X, evalPt.Y, evalPt.Z);
                     disp.SetSubMatrix(0, i, shapeFunc.Multiply(u));
                 } 
             }
-            */
+            
 
             List<NodeClass> dispNodes = nodes;
             List<Point3d> dispPts = new List<Point3d>();
