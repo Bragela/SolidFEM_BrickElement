@@ -147,19 +147,23 @@ namespace SolidFEM_BrickElement
             }
 
             int cnt = 0;
+            int cnt_1 = 0;
+            int cnt_2 = 0;
 
-            for (int i = 0; i<7; i++)
+            for (int i = 0; i <= 7; i++)
             {
                 NodeClass node = nodes[i];
 
                 if (node.support == fixd)
                 {
-                    for (int j = 0; j < 2; j++)
+                    for (int j = 0; j <= 2; j++)
                     {
                         K = K.RemoveRow(cnt).RemoveColumn(cnt);
                         forceVec = forceVec.RemoveRow(cnt);
+                        cnt_1++;
                     }
                     cnt -= 3;
+                    cnt_2++;
                 }
                 cnt += 3;
             }
@@ -174,14 +178,14 @@ namespace SolidFEM_BrickElement
             int node_nr = 0;
             int u_cnt = 0;
 
-            for(int i = 0; i < u.RowCount; i+=3)
+            for(int i = 0; i < nodes.Count; i++)
             {
                 NodeClass node = nodes[node_nr];
                 if (node.support == free)
                 {
-                    u[i,0] = u_red[u_cnt,0];
-                    u[i+1,0] = u_red[u_cnt+1,0];
-                    u[i + 2, 0] = u_red[u_cnt + 2, 0];
+                    u[i ,0] = u_red[u_cnt,0];
+                    u[i + 8 ,0] = u_red[u_cnt + 1,0];
+                    u[i + 16 , 0] = u_red[u_cnt + 2, 0];
 
                     u_cnt += 3;
                 }
@@ -196,11 +200,10 @@ namespace SolidFEM_BrickElement
             {
                 Point3d evalPt = getGenCoords(i);
                 NodeClass node = nodes[i];
-                if (node.support == free)
-                {
-                    Matrix<double> shapeFunc = GetShapeFunctions(nodes.Count, evalPt.X, evalPt.Y, evalPt.Z);
-                    disp.SetSubMatrix(0, i, shapeFunc.Multiply(u));
-                } 
+                
+                Matrix<double> shapeFunc = GetShapeFunctions(nodes.Count, evalPt.X, evalPt.Y, evalPt.Z);
+                disp.SetSubMatrix(0, i, shapeFunc.Multiply(u));
+
             }
             
 
@@ -224,7 +227,7 @@ namespace SolidFEM_BrickElement
 
             DA.SetData(0, elem);
             DA.SetDataList(1, dispPts);
-            DA.SetData(2, u.ToString());
+            DA.SetData(2, disp.ToString());
             DA.SetData(3, K.ToString());
 
 
