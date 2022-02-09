@@ -12,7 +12,7 @@ namespace SolidFEM_BrickElement
         /// Initializes a new instance of the DeconstructNode class.
         /// </summary>
         public DeconstructNode()
-          : base("DeconstructNode", "Nickname",
+          : base("DeconstructNode", "DeconstructNode",
               "Description",
               "SolidFEM", "SolidFEM_Brick")
         {
@@ -23,6 +23,7 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            pManager.AddGenericParameter("Node", "N", "A NodeClass object", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -30,6 +31,10 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddNumberParameter("Global ID", "gID", "Global ID of the node", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Local ID", "lID", "Local ID of the node", GH_ParamAccess.item);
+            pManager.AddPointParameter("Point", "P", "The point coordinates of the node", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Support", "S", "Support type of the node", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -38,6 +43,16 @@ namespace SolidFEM_BrickElement
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            //inputs
+            NodeClass node = new NodeClass();
+            DA.GetData(0, ref node);
+
+
+            //outputs
+            DA.SetData(0, node.GlobalID);
+            DA.SetData(0, node.LocalID);
+            DA.SetData(0, node.Point);
+            DA.SetData(0, node.support);
         }
 
         /// <summary>

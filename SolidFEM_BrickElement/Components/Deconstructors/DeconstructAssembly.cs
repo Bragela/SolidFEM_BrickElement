@@ -12,7 +12,7 @@ namespace SolidFEM_BrickElement
         /// Initializes a new instance of the DeconstructAssembly class.
         /// </summary>
         public DeconstructAssembly()
-          : base("DeconstructAssembly", "Nickname",
+          : base("DeconstructAssembly", "DeconstructAssembly",
               "Description",
               "SolidFEM", "SolidFEM_Brick")
         {
@@ -23,6 +23,7 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            pManager.AddGenericParameter("Assembly", "A", "A AssemblyClass object", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -30,6 +31,9 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddGenericParameter("Elements", "E", "List of elements in the assembly", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Loads", "L", "List of loads in the assembly", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Material", "M", "Material of the assembly", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -38,6 +42,14 @@ namespace SolidFEM_BrickElement
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            //inputs
+            AssemblyClass assembly = new AssemblyClass();
+            DA.GetData(0, ref assembly);
+
+            //outputs
+            DA.SetDataList(0, assembly.elements);
+            DA.SetDataList(1, assembly.loads);
+            DA.SetData(2, assembly.material);
         }
 
         /// <summary>

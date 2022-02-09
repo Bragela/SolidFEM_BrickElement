@@ -12,7 +12,7 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
         /// Initializes a new instance of the DeconstructMaterial class.
         /// </summary>
         public DeconstructMaterial()
-          : base("DeconstructMaterial", "Nickname",
+          : base("DeconstructMaterial", "DeconstructMaterial",
               "Description",
               "SolidFEM", "SolidFEM_Brick")
         {
@@ -23,6 +23,7 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            pManager.AddGenericParameter("Material", "M", "A MaterialClass object", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -30,6 +31,9 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddTextParameter("Name", "N", "Material name", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Youngs Modulus", "E", "The materials youngs modulus", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Poissons ratio", "v", "The materials poissons ratio", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -38,6 +42,14 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            //inputs
+            MaterialClass mat = new MaterialClass();
+            DA.GetData(0, ref mat);
+
+            //outputs
+            DA.SetData(0, mat.Name);
+            DA.SetData(1, mat.eModulus);
+            DA.SetData(2, mat.pRatio);
         }
 
         /// <summary>

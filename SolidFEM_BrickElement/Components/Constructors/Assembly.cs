@@ -23,6 +23,9 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            pManager.AddGenericParameter("Elements", "E", "List of elements to assemble", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Loads", "L", "List of loads to assemble", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Material", "M", "Material of the assembly", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -30,6 +33,7 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddGenericParameter("Assembly", "A", "A AssemblyClass object", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -38,6 +42,20 @@ namespace SolidFEM_BrickElement
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            //inputs
+            List<ElementClass> elems = new List<ElementClass>();
+            List<LoadClass> loads = new List<LoadClass>();
+            MaterialClass mat = new MaterialClass();
+
+            DA.GetData(0, ref elems);
+            DA.GetData(1, ref loads);
+            DA.GetData(2, ref mat);
+
+            //code
+            AssemblyClass assembly = new AssemblyClass(elems, loads, mat);
+
+            //outputs
+            DA.SetData(0, assembly);
         }
 
         /// <summary>

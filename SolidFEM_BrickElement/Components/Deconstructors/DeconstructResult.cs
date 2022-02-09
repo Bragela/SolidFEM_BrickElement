@@ -4,15 +4,15 @@ using System.Collections.Generic;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
-namespace SolidFEM_BrickElement.Components.Deconstructors
+namespace SolidFEM_BrickElement
 {
-    public class DeconstructSupport : GH_Component
+    public class DeconstructResult : GH_Component
     {
         /// <summary>
-        /// Initializes a new instance of the DeconstructSupport class.
+        /// Initializes a new instance of the DeconstructResult class.
         /// </summary>
-        public DeconstructSupport()
-          : base("DeconstructSupport", "DeconstructSupport",
+        public DeconstructResult()
+          : base("DeconstructResult", "DeconstructResult",
               "Description",
               "SolidFEM", "SolidFEM_Brick")
         {
@@ -23,7 +23,7 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Support", "S", "A SupportClass object", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Result", "R", "A ResultClass object", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -31,9 +31,10 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddBooleanParameter("Tx", "Tx", "Type of support in X direction (true = free, false = fixed)", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Ty", "Ty", "Type of support in Y direction (true = free, false = fixed)", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Tz", "Tz", "Type of support in Z direction (true = free, false = fixed)", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Displacements", "D", "List of displacements", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Stresses", "s", "List of stresses", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Strains", "e", "List of strains", GH_ParamAccess.list);
+            pManager.AddMeshParameter("Mesh", "M", "Deformed mesh", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -42,15 +43,15 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            //inputs
-            SupportClass sup = new SupportClass();
-            DA.GetData(0, ref sup);
+            //input
+            ResultClass res = new ResultClass();
+            DA.GetData(0, ref res);
 
             //outputs
-            DA.SetData(0, sup.Tx);
-            DA.SetData(0, sup.Ty);
-            DA.SetData(0, sup.Tz);
-
+            DA.SetDataList(0, res.displacements);
+            DA.SetDataList(1, res.stresses);
+            DA.SetDataList(2, res.strains);
+            DA.SetData(3, res.mesh);
         }
 
         /// <summary>
@@ -71,7 +72,7 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("14FC4728-7ACF-4004-8313-018CEFB7187E"); }
+            get { return new Guid("74411151-1F39-40E0-952E-73E8B4BDC719"); }
         }
     }
 }

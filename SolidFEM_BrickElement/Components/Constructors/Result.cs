@@ -12,7 +12,7 @@ namespace SolidFEM_BrickElement
         /// Initializes a new instance of the Result class.
         /// </summary>
         public Result()
-          : base("Result", "Nickname",
+          : base("Result", "Result",
               "Description",
               "SolidFEM", "SolidFEM_Brick")
         {
@@ -23,6 +23,10 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
+            pManager.AddNumberParameter("Displacements", "D", "List of displacements", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Stresses", "s", "List of stresses", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Strains", "e", "List of strains", GH_ParamAccess.list);
+            pManager.AddMeshParameter("Mesh", "M", "Deformed mesh", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -30,6 +34,7 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddGenericParameter("Result", "R", "A ResultClass object", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -38,6 +43,23 @@ namespace SolidFEM_BrickElement
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            //inputs
+            List<double> disp = new List<double>();
+            List<double> stresses = new List<double>();
+            List<double> strains = new List<double>();
+            Mesh mesh = new Mesh();
+
+            DA.GetData(0, ref disp);
+            DA.GetData(1, ref stresses);
+            DA.GetData(2, ref strains);
+            DA.GetData(3, ref mesh);
+
+            //code
+
+            ResultClass res = new ResultClass(disp, stresses, strains, mesh);
+
+            //outputs
+            DA.SetData(0, res);
         }
 
         /// <summary>

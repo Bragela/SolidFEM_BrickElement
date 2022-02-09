@@ -147,23 +147,19 @@ namespace SolidFEM_BrickElement
             }
 
             int cnt = 0;
-            int cnt_1 = 0;
-            int cnt_2 = 0;
 
-            for (int i = 0; i <= 7; i++)
+            for (int i = 0; i < nodes.Count; i++)
             {
                 NodeClass node = nodes[i];
 
                 if (node.support == fixd)
                 {
-                    for (int j = 0; j <= 2; j++)
+                    for (int j = 0; j < 3; j++)
                     {
                         K = K.RemoveRow(cnt).RemoveColumn(cnt);
                         forceVec = forceVec.RemoveRow(cnt);
-                        cnt_1++;
                     }
                     cnt -= 3;
-                    cnt_2++;
                 }
                 cnt += 3;
             }
@@ -199,13 +195,12 @@ namespace SolidFEM_BrickElement
             for (int i = 0; i < nodes.Count; i++)
             {
                 Point3d evalPt = getGenCoords(i);
-                NodeClass node = nodes[i];
                 
                 Matrix<double> shapeFunc = GetShapeFunctions(nodes.Count, evalPt.X, evalPt.Y, evalPt.Z);
                 disp.SetSubMatrix(0, i, shapeFunc.Multiply(u));
 
             }
-            
+
 
             List<NodeClass> dispNodes = nodes;
             List<Point3d> dispPts = new List<Point3d>();
@@ -381,24 +376,17 @@ namespace SolidFEM_BrickElement
 
                 //Create lists of coordinates
 
-                
-
-                Matrix<double> coords_vert = Matrix<double>.Build.Dense(24, 1);
                 Matrix<double> coords_hor = Matrix<double>.Build.Dense(8, 3);
 
                 for (int i = 0; i < _nodes.Count; i++)
                 {
                     NodeClass node = _nodes[i];
-                    coords_vert[i, 0] = node.Point.X;
-                    coords_vert[i + 8, 0] = node.Point.Y;
-                    coords_vert[i + 16, 0] = node.Point.Z;
 
                     coords_hor[i, 0] = node.Point.X;
                     coords_hor[i, 1] = node.Point.Y;
                     coords_hor[i, 2] = node.Point.Z;
                 }
 
-                Matrix<double> shapeFunc = GetShapeFunctions(_nodes.Count, _dummy.X, _dummy.Y, _dummy.Z);
                 Matrix<double> shapeFuncDerGen = GetDerivatedShapeFunctions(_nodes.Count, _dummy.X, _dummy.Y, _dummy.Z);
 
                 //Create Jacobi matrix
