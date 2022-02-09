@@ -36,9 +36,11 @@ namespace SolidFEM_BrickElement
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddGenericParameter("Element", "E", "The calculated element", GH_ParamAccess.item);
-            pManager.AddTextParameter("Matrix", "B", "", GH_ParamAccess.item);
             pManager.AddPointParameter("Points", "P", "", GH_ParamAccess.list);
-            pManager.AddTextParameter("debug", "B", "", GH_ParamAccess.item);
+            pManager.AddTextParameter("Debug_1", "D", "", GH_ParamAccess.item);
+            pManager.AddTextParameter("Debug_2", "D", "", GH_ParamAccess.item);
+            pManager.AddTextParameter("Debug_3", "D", "", GH_ParamAccess.list);
+            pManager.AddTextParameter("Debug_4", "D", "", GH_ParamAccess.list);
             // pManager.AddPointParameter("Box", "B", "", GH_ParamAccess.list);
         }
 
@@ -99,7 +101,8 @@ namespace SolidFEM_BrickElement
             //Create a long (24x1) force vector to be used in calculation of displacements
 
             Matrix<double> forceVec = Matrix<double>.Build.Dense(24, 1);
-              
+
+            /*
             for (int i = 0; i < forces.Count; i++)
             {
                 LoadClass force = forces[i];
@@ -107,7 +110,16 @@ namespace SolidFEM_BrickElement
                 forceVec[i + 8, 0] = force.loadVector.Y;
                 forceVec[i + 16, 0] = force.loadVector.Z;
             }
+            */
+            int count = 0;
+            foreach(LoadClass load in forces)
+            {
+                forceVec[count, 0] = load.loadVector.X;
+                forceVec[count + 1, 0] = load.loadVector.Y;
+                forceVec[count + 2, 0] = load.loadVector.Z;
 
+                count += 3;
+            }
 
             //Create stiffness matrix
 
@@ -134,10 +146,29 @@ namespace SolidFEM_BrickElement
                 K += k;
             }
 
+            int _count = 0;
+
+            for(int i = 0; i<K.RowCount; i += 3)
+            {
+                NodeClass node = nodes[_count];
+
+                if (node.support == fixd)
+                {
+                    K.ClearRow(i);
+                    K.ClearRow(i+1);
+                    K.ClearRow(i+2);
+
+                    K.ClearColumn(i);
+                    K.ClearColumn(i+1);
+                    K.ClearColumn(i+2);
+                }
+            _count += 1;
+            }
+
+
             Matrix<double> K_mat = K;
 
             Matrix<double> K_inv = K.Inverse(); 
-            double det_k = K.Determinant();
             
 
             
@@ -145,8 +176,8 @@ namespace SolidFEM_BrickElement
 
             Matrix<double> u = K_inv.Multiply(forceVec);
             Matrix<double> disp = Matrix<double>.Build.Dense(3, 8);
-            List<string> shapeFuncs = new List<string>();
 
+            /*
             for (int i = 0; i < nodes.Count; i++)
             {
                 Point3d evalPt = getGenCoords(i);
@@ -161,6 +192,7 @@ namespace SolidFEM_BrickElement
                     disp.SetSubMatrix(0, i, shapeFunc.Multiply(u));
                 } 
             }
+            */
 
             List<NodeClass> dispNodes = nodes;
             List<Point3d> dispPts = new List<Point3d>();
@@ -171,23 +203,21 @@ namespace SolidFEM_BrickElement
                 Point3d pt = new Point3d(node.Point.X + disp[0, i], node.Point.Y + disp[1, i], node.Point.Z + disp[2, i]);
                 dispPts.Add(pt);
             }
-
-            BoundingBox bb = new BoundingBox(dispPts);
             
             //Creates on element with ID, all nodes and mesh
             ElementClass elem = new ElementClass(0, nodes, mesh);
 
-            
-            
 
-        //outputs
 
-            u.ToString();
+
+            //outputs
 
             DA.SetData(0, elem);
-            DA.SetData(1, disp.ToString());
-            DA.SetDataList(2, dispPts);
+            DA.SetDataList(1, dispPts);
+            DA.SetData(2, u.ToString());
             DA.SetData(3, K.ToString());
+
+
 
             #region Methods
 
@@ -197,50 +227,50 @@ namespace SolidFEM_BrickElement
 
                 if (NodeNr == 0)
                 {
-                    GenCoords.X = 1;
+                    GenCoords.X = -1;
                     GenCoords.Y = -1;
                     GenCoords.Z = -1;
                 }
                 else if (NodeNr == 1)
                 {
                     GenCoords.X = 1;
-                    GenCoords.Y = 1;
+                    GenCoords.Y = -1;
                     GenCoords.Z = -1;
                 }
                 else if (NodeNr == 2)
                 {
-                    GenCoords.X = -1;
+                    GenCoords.X = 1;
                     GenCoords.Y = 1;
                     GenCoords.Z = -1;
                 }
                 else if (NodeNr == 3)
                 {
                     GenCoords.X = -1;
-                    GenCoords.Y = -1;
+                    GenCoords.Y = 1;
                     GenCoords.Z = -1;
                 }
                 else if (NodeNr == 4)
                 {
-                    GenCoords.X = 1;
+                    GenCoords.X = -1;
                     GenCoords.Y = -1;
                     GenCoords.Z = 1;
                 }
                 else if (NodeNr == 5)
                 {
                     GenCoords.X = 1;
-                    GenCoords.Y = 1;
+                    GenCoords.Y = -1;
                     GenCoords.Z = 1;
                 }
                 else if (NodeNr == 6)
                 {
-                    GenCoords.X = -1;
+                    GenCoords.X = 1;
                     GenCoords.Y = 1;
                     GenCoords.Z = 1;
                 }
                 else if (NodeNr == 7)
                 {
                     GenCoords.X = -1;
-                    GenCoords.Y = -1;
+                    GenCoords.Y = 1;
                     GenCoords.Z = 1;
                 }
 
@@ -398,12 +428,10 @@ namespace SolidFEM_BrickElement
                 C[0, 1] = C[0, 2] = C[1, 0] = C[1, 2] = C[2, 0] = C[2, 1] = beta;
                 C[3, 3] = C[4, 4] = C[5, 5] = gamma;
 
+                Matrix<double> b_trans = B.Transpose();
 
                 //Constructing the integrand by multiplying B transposed with C, then multiplied with B and lastly multiplied with the determinant of the jacobian
-                Matrix<double> integrand = B.Transpose().Multiply(C).Multiply(B).Multiply(jacobi_det);
-
-                
-                
+                Matrix<double> integrand = b_trans*(C)*(B)*(jacobi_det);
 
                 return integrand;
             }
