@@ -102,7 +102,7 @@ namespace SolidFEM_BrickElement
 
             Matrix<double> forceVec = Matrix<double>.Build.Dense(24, 1);
 
-            /*
+            
             for (int i = 0; i < forces.Count; i++)
             {
                 LoadClass force = forces[i];
@@ -110,7 +110,7 @@ namespace SolidFEM_BrickElement
                 forceVec[i + 8, 0] = force.loadVector.Y;
                 forceVec[i + 16, 0] = force.loadVector.Z;
             }
-            */
+            /*
             int count = 0;
             foreach(LoadClass load in forces)
             {
@@ -120,6 +120,7 @@ namespace SolidFEM_BrickElement
 
                 count += 3;
             }
+            */
 
             //Create stiffness matrix
 
@@ -146,7 +147,9 @@ namespace SolidFEM_BrickElement
                 K += k;
             }
 
+            /*
             int cnt = 0;
+            int cnt_2 = 8;
 
             for (int i = 0; i < nodes.Count; i++)
             {
@@ -154,15 +157,16 @@ namespace SolidFEM_BrickElement
 
                 if (node.support == fixd)
                 {
-                    for (int j = 0; j < 3; j++)
-                    {
-                        K = K.RemoveRow(cnt).RemoveColumn(cnt);
-                        forceVec = forceVec.RemoveRow(cnt);
-                    }
-                    cnt -= 3;
+
+                 K = K.RemoveRow(cnt).RemoveColumn(cnt).RemoveRow(cnt+cnt_2).RemoveColumn(cnt+cnt_2).RemoveRow(cnt+2*cnt_2).RemoveColumn(cnt+2*cnt_2);
+                 forceVec = forceVec.RemoveRow(cnt).RemoveRow(cnt+cnt_2).RemoveRow(cnt+2*cnt_2);
+                 cnt_2 = cnt_2 - 1;
+
+                 cnt -= 1;
                 }
-                cnt += 3;
+                cnt += 1;
             }
+            */       
 
             Matrix<double> K_inv = K.Inverse(); 
             
@@ -211,12 +215,13 @@ namespace SolidFEM_BrickElement
                 Point3d pt = new Point3d(node.Point.X + disp[0, i], node.Point.Y + disp[1, i], node.Point.Z + disp[2, i]);
                 dispPts.Add(pt);
             }
-            
+
+
             //Creates on element with ID, all nodes and mesh
             ElementClass elem = new ElementClass(0, nodes, mesh);
 
 
-
+            
 
             //outputs
 
@@ -396,6 +401,7 @@ namespace SolidFEM_BrickElement
                 //Jacobi determinant
 
                 double jacobi_det = jacobi.Determinant();
+                double volume = jacobi_det * 8;
 
                 //Strain - disp relationship
 
