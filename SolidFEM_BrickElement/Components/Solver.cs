@@ -168,13 +168,41 @@ namespace SolidFEM_BrickElement
             }
             */       
 
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                NodeClass node = nodes[i];
+                if (node.support == fixd)
+                {
+                    K.ClearColumns(i, i + 8, i + 16);
+                    K.ClearRows(i,i + 8,i + 16);
+                    //Forcevec set to zero
+                }
+            }
+
+
+
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                NodeClass node = nodes[i];
+                if (node.support == fixd)
+                {
+                    K[i, i] = 1;
+                    K[i + 8, i + 8] = 1;
+                    K[i + 16, i + 16] = 1;
+                }
+            }
+
+
+
+
             Matrix<double> K_inv = K.Inverse(); 
             
             //u = Kr
 
-            Matrix<double> u_red = K_inv.Multiply(forceVec);
-            Matrix<double> u = Matrix<double>.Build.Dense(24,1);
+            Matrix<double> u = K_inv.Multiply(forceVec);
 
+            /*
+            Matrix<double> u = Matrix<double>.Build.Dense(24,1);
             int node_nr = 0;
             int u_cnt = 0;
 
@@ -191,7 +219,7 @@ namespace SolidFEM_BrickElement
                 }
                 node_nr += 1;
             }
-
+            */
 
             Matrix<double> disp = Matrix<double>.Build.Dense(3, 8);
 
