@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Grasshopper.Kernel;
+using Rhino.Geometry;
 
 namespace SolidFEM_BrickElement
 {
@@ -11,6 +13,7 @@ namespace SolidFEM_BrickElement
         //Properties
         // True = free, false = fixed
 
+        public Point3d pt;
         public Boolean Tx;
         public Boolean Ty;
         public Boolean Tz;

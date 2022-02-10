@@ -233,7 +233,7 @@ namespace SolidFEM_BrickElement
 
             }
 
-
+            ResultClass res = new ResultClass();
             List<NodeClass> dispNodes = nodes;
             List<Point3d> dispPts = new List<Point3d>();
 
