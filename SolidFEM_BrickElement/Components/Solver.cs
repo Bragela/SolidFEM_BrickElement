@@ -345,29 +345,29 @@ namespace SolidFEM_BrickElement
                     Nzeta[i] = (1.0 / 8.0) * genCoord.Z * (1 + genCoord.Y * eta) * (1 + genCoord.X * xi);
                 }
 
-                Matrix<double> ShapeMat = Matrix<double>.Build.Dense(3, 8);
+                Matrix<double> derivatedShapeMat = Matrix<double>.Build.Dense(3, 8);
 
                 //Construct a matrix with all derivated shape functions
-                for (int i = 0; i < ShapeMat.RowCount; i++)
+                for (int i = 0; i < derivatedShapeMat.RowCount; i++)
                 {
-                    for (int j = 0; j < ShapeMat.ColumnCount; j++)
+                    for (int j = 0; j < derivatedShapeMat.ColumnCount; j++)
                     {
                         if (i == 0)
                         {
-                            ShapeMat[i, j] = Nxi[j];
+                            derivatedShapeMat[i, j] = Nxi[j];
                         }
                         else if (i == 1)
                         {
-                            ShapeMat[i, j] = Neta[j];
+                            derivatedShapeMat[i, j] = Neta[j];
                         }
                         else if (i == 2)
                         {
-                            ShapeMat[i, j] = Nzeta[j];
+                            derivatedShapeMat[i, j] = Nzeta[j];
                         }
                     }
                 }
 
-                return ShapeMat;
+                return derivatedShapeMat;
             }
 
             Matrix<double> ConstructStiffnessMatrix(List<NodeClass> _nodes, MaterialClass material, Point3d _dummy) //Construction of the B matrix
