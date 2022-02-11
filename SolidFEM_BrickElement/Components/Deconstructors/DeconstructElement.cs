@@ -12,7 +12,7 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
         /// Initializes a new instance of the DeconstructElement class.
         /// </summary>
         public DeconstructElement()
-          : base("DeconstructElement", "DeconstructElement",
+          : base("Deconstruct Elements", "Deconstruct Element",
               "Description",
               "SolidFEM", "SolidFEM_Brick")
         {
@@ -31,7 +31,7 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddNumberParameter("Global ID", "ID", "Global ID of the element", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Global ID", "ID", "Global ID of the element", GH_ParamAccess.list);
             pManager.AddGenericParameter("Nodes", "N", "The nodes of the element", GH_ParamAccess.list);
             pManager.AddMeshParameter("Mesh", "M", "The elements mesh", GH_ParamAccess.list);
         }
@@ -44,7 +44,7 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
         {
             //inputs
             List<ElementClass> elems = new List<ElementClass>();
-            DA.GetData(0, ref elems);
+            DA.GetDataList(0, elems);
 
             List<int> idList = new List<int>();
             List<List<NodeClass>> nodes = new List<List<NodeClass>>();
@@ -52,6 +52,7 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
 
             foreach(ElementClass el in elems)
             {
+
                 idList.Add(el.ID);
                 nodes.Add(el.Nodes);
                 meshes.Add(el.Mesh);

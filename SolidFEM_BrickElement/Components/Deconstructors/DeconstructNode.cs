@@ -12,7 +12,7 @@ namespace SolidFEM_BrickElement
         /// Initializes a new instance of the DeconstructNode class.
         /// </summary>
         public DeconstructNode()
-          : base("DeconstructNode", "DeconstructNode",
+          : base("Deconstruct Node", "DeconstructNode",
               "Description",
               "SolidFEM", "SolidFEM_Brick")
         {
@@ -23,7 +23,7 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Node", "N", "A NodeClass object", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Node", "N", "A NodeClass object", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -31,10 +31,10 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddNumberParameter("Global ID", "gID", "Global ID of the node", GH_ParamAccess.item);
-            pManager.AddNumberParameter("Local ID", "lID", "Local ID of the node", GH_ParamAccess.item);
-            pManager.AddPointParameter("Point", "P", "The point coordinates of the node", GH_ParamAccess.item);
-            pManager.AddGenericParameter("Support", "S", "Support type of the node", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("Global ID", "gID", "Global ID of the node", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Local ID", "lID", "Local ID of the node", GH_ParamAccess.list);
+            pManager.AddPointParameter("Points", "P", "The point coordinates of the node", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Supports", "S", "Support type of the node", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -44,15 +44,33 @@ namespace SolidFEM_BrickElement
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             //inputs
-            NodeClass node = new NodeClass();
-            DA.GetData(0, ref node);
+            List<List<NodeClass>> nodes = new List<List<NodeClass>>();
+            DA.GetDataList(0, nodes);
+            Type hei= DA.GetType();
+
+
+            List<int> globalIdList = new List<int>();
+            List<int> localIdList = new List<int>();
+            List<Point3d> nodePointList = new List<Point3d>();
+            List<SupportClass> supportList = new List<SupportClass>();
+
+
+            foreach (NodeClass node in nodes[0])
+            {
+               
+                globalIdList.Add(node.GlobalID);
+                localIdList.Add(node.LocalID);
+                nodePointList.Add(node.Point);
+                supportList.Add(node.support);
+                
+            }
 
 
             //outputs
-            DA.SetData(0, node.GlobalID);
-            DA.SetData(0, node.LocalID);
-            DA.SetData(0, node.Point);
-            DA.SetData(0, node.support);
+            DA.SetDataList(0, globalIdList);
+            DA.SetDataList(1, localIdList);
+            DA.SetDataList(2, nodePointList);
+            DA.SetDataList(3, supportList);
         }
 
         /// <summary>
