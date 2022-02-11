@@ -24,10 +24,10 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddMeshParameter("Mesh", "M", "Base mesh for lofting",GH_ParamAccess.item);
-            pManager.AddMeshParameter("Mesh", "M", "Top mesh for lofting", GH_ParamAccess.item);
-            pManager.AddIntegerParameter("U Count Mesh", "U", "Divitions in U direction base mesh", GH_ParamAccess.item, 5);
-            pManager.AddIntegerParameter("V Count Mesh", "V", "Divitions in V direction base mesh", GH_ParamAccess.item, 5);
+            pManager.AddMeshParameter("Mesh", "M", "Base mesh",GH_ParamAccess.item);
+            pManager.AddMeshParameter("Mesh", "M", "Topmesh", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("U Count", "U", "Divitions in U direction base mesh", GH_ParamAccess.item, 5);
+            pManager.AddIntegerParameter("V Count", "V", "Divitions in V direction base mesh", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("Devitions", "nDiv", "Number of divisions between mesh surfaces", GH_ParamAccess.item);
         }
 
@@ -91,19 +91,36 @@ namespace SolidFEM_BrickElement
 
             // sort points in levels and rows
 
-            //int numDir1 = 6;
-            //int numDir2 = 6;
+
+            //int cnt = 0;
+            //List<List<List<Point3d>>> levels = new List<List<List<Point3d>>>();
+            //for (int i = 0; i < ptsOnGuideCurve[0].Length; i++)
+            //{
+            //    List<List<Point3d>> level = new List<List<Point3d>>();
+            //    for (int j = 0; j < nU+1; j++)
+            //    {
+            //        List<Point3d> row = new List<Point3d>();
+            //        for (int k = 0; k < nV+1; k++)
+            //        {
+            //            Point3d[] pts = ptsOnGuideCurve[k + j * (nV+1)];
+            //            row.Add(pts[i]);
+            //            cnt++;
+            //        }
+            //        level.Add(row);
+            //    }
+            //    levels.Add(level);
+            //}
             int cnt = 0;
             List<List<List<Point3d>>> levels = new List<List<List<Point3d>>>();
             for (int i = 0; i < ptsOnGuideCurve[0].Length; i++)
             {
                 List<List<Point3d>> level = new List<List<Point3d>>();
-                for (int j = 0; j < nU+1; j++)
+                for (int j = 0; j < nU + 1; j++)
                 {
                     List<Point3d> row = new List<Point3d>();
-                    for (int k = 0; k < nV+1; k++)
+                    for (int k = 0; k < nV + 1; k++)
                     {
-                        Point3d[] pts = ptsOnGuideCurve[k + j * (nV+1)];
+                        Point3d[] pts = ptsOnGuideCurve[k + j * (nV + 1)];
                         row.Add(pts[i]);
                         cnt++;
                     }
@@ -132,14 +149,17 @@ namespace SolidFEM_BrickElement
                     for (int k = 0; k < firstBotRow.Count - 1; k++)
                     {
                         NodeClass n0 = new NodeClass(gnID, 0, firstBotRow[k]);
-                        NodeClass n1 = new NodeClass(gnID+1, 1, firstBotRow[k + 1]);
-                        NodeClass n2 = new NodeClass(gnID+2, 2, NextBotRow[k + 1]);
-                        NodeClass n3 = new NodeClass(gnID+3, 3, NextBotRow[k]);
+                        NodeClass n1 = new NodeClass(gnID + 1, 1, NextBotRow[k]);
+                        NodeClass n2 = new NodeClass(gnID + 2, 2, NextBotRow[k + 1]);
+                        NodeClass n3 = new NodeClass(gnID+3, 3, firstBotRow[k + 1]);
+                        
 
                         NodeClass n4 = new NodeClass(gnID+4, 4, firstTopRow[k]);
-                        NodeClass n5 = new NodeClass(gnID+5, 5, firstTopRow[k + 1]);
-                        NodeClass n6 = new NodeClass(gnID+6, 6, NextTopRow[k + 1]);
-                        NodeClass n7 = new NodeClass(gnID+7, 7, NextTopRow[k]);
+                        NodeClass n5 = new NodeClass(gnID + 5, 5, NextTopRow[k]);
+                        NodeClass n6 = new NodeClass(gnID + 6, 6, NextTopRow[k + 1]);
+                        NodeClass n7 = new NodeClass(gnID+7, 7, firstTopRow[k + 1]);
+                        
+                        
 
                         gnID += 8;
 
