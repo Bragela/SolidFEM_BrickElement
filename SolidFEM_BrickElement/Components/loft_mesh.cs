@@ -60,7 +60,6 @@ namespace SolidFEM_BrickElement
             #endregion
 
 
-
             #region code
 
             // create lines between vertices in baseMesh and topMesh
@@ -168,23 +167,6 @@ namespace SolidFEM_BrickElement
 
 
             #endregion
-
-
-            #region space for debuging
-
-            //ElementClass e1 = elementList[1];
-            //List<NodeClass> ns1 = e1.Nodes;
-            //Mesh m1 = e1.Mesh;
-
-            //List<Point3d> p1 = new List<Point3d>();
-
-            //foreach (NodeClass m in ns1)
-            //{
-            //    p1.Add(m.Point);
-            //}
-
-            #endregion
-
 
 
             #region output
