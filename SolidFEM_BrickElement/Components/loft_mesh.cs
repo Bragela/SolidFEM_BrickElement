@@ -3,6 +3,8 @@ using System.Collections.Generic;
 
 using Grasshopper.Kernel;
 using Rhino.Geometry;
+
+
 using MathNet.Numerics.LinearAlgebra;
 
 namespace SolidFEM_BrickElement
@@ -24,11 +26,11 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddMeshParameter("Mesh", "M", "Base mesh", GH_ParamAccess.item);
-            pManager.AddMeshParameter("Mesh", "M", "Topmesh", GH_ParamAccess.item);
-            pManager.AddIntegerParameter("U Count", "U", "Divitions in U direction base mesh", GH_ParamAccess.item, 5);
-            pManager.AddIntegerParameter("V Count", "V", "Divitions in V direction base mesh", GH_ParamAccess.item, 5);
-            pManager.AddIntegerParameter("Devitions", "nDiv", "Number of divisions between mesh surfaces", GH_ParamAccess.item);
+            pManager.AddBrepParameter("Brep", "B", "Base brep", GH_ParamAccess.item);
+            pManager.AddBrepParameter("Brep", "B", "Top brep", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("U Count", "U", "Divitions in U direction", GH_ParamAccess.item, 5);
+            pManager.AddIntegerParameter("V Count", "V", "Divitions in V direction", GH_ParamAccess.item, 5);
+            pManager.AddIntegerParameter("W Count", "W", "Divitions in W direction", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -38,6 +40,7 @@ namespace SolidFEM_BrickElement
         {
             // pManager.AddMeshParameter("Mesh", "M", "Mesh from loft", GH_ParamAccess.list);
             pManager.AddGenericParameter("Elements", "E", "Elements from loft", GH_ParamAccess.list);
+          
 
         }
 
@@ -48,63 +51,73 @@ namespace SolidFEM_BrickElement
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             #region Input
-            Mesh baseMesh = new Mesh();
-            Mesh topMesh = new Mesh();
+            Brep baseBrep = new Brep();
+            Brep topBrep = new Brep();
             int nU = 0;
             int nV = 0;
-            int div = 0;
+            int nW = 0;
 
-            DA.GetData(0, ref baseMesh);
-            DA.GetData(1, ref topMesh);
+            DA.GetData(0, ref baseBrep);
+            DA.GetData(1, ref topBrep);
             DA.GetData(2, ref nU);
             DA.GetData(3, ref nV);
-            DA.GetData(4, ref div);
+            DA.GetData(4, ref nW);
             #endregion
 
 
-            #region code
+            #region Code
 
-            // create lines between vertices in baseMesh and topMesh
+            // create points on surface and lines between surfaces
 
-            Rhino.Geometry.Collections.MeshVertexList baseMeshVertices = baseMesh.Vertices;
-            Rhino.Geometry.Collections.MeshVertexList topMeshVertices = topMesh.Vertices;
+            Rhino.Geometry.Surface baseSurface = baseBrep.Surfaces[0];
+            Rhino.Geometry.Surface topSurface = topBrep.Surfaces[0];
 
-            List<PolylineCurve> guidecurves = new List<PolylineCurve>();
-            for (int i = 0; i < baseMeshVertices.Count; i++)
+            baseSurface.SetDomain(0, new Interval(0.0, 1.0));
+            baseSurface.SetDomain(1, new Interval(0.0, 1.0));
+            topSurface.SetDomain(0, new Interval(0.0, 1.0));
+            topSurface.SetDomain(1, new Interval(0.0, 1.0));
+
+            double dU = 1.0 / (double)nU;
+            double dV = 1.0 / (double)nV;
+            
+            List<Curve> allCrvs = new List<Curve>();
+            for (int i = 0; i < nV + 1; i++)
             {
-                Point3d startPt = baseMeshVertices[i];
-                Point3d endPt = topMeshVertices[i];
-                List<Point3d> startEndPts = new List<Point3d>() { startPt, endPt };
-                var curve = new PolylineCurve(startEndPts);
-                guidecurves.Add(curve);
+                for (int j = 0; j < nU + 1; j++)
+                {
+                    Point3d stPt = baseSurface.PointAt((double)j * dU, (double)i * dV);
+                    Point3d enPt = topSurface.PointAt((double)j * dU, (double)i * dV);
+                    List<Point3d> startEndPts = new List<Point3d>() {stPt, enPt};
+                    Curve curve = new PolylineCurve(startEndPts);
+                    allCrvs.Add(curve);
+                }
             }
 
 
-            // create points on lines between baseMesh and topMesh
+            //// create points on lines between surfaces
 
             List<Point3d[]> ptsOnGuideCurve = new List<Point3d[]>();
-            foreach (Curve curve in guidecurves)
+            foreach (Curve crv in allCrvs)
             {
                 Point3d[] pts;
-                curve.DivideByCount(div, true, out pts);
+                crv.DivideByCount(nW, true, out pts);
                 ptsOnGuideCurve.Add(pts);
             }
 
 
-            // create nodes and sort in levels and rows
+            // create global nodes and sort in levels and rows
 
-            
             int cnt = 0;
             List<List<List<NodeClass>>> levels = new List<List<List<NodeClass>>>();
             for (int i = 0; i < ptsOnGuideCurve[0].Length; i++)
             {
                 List<List<NodeClass>> level = new List<List<NodeClass>>();
-                for (int j = 0; j < nU + 1; j++)
+                for (int j = 0; j < nV + 1; j++)
                 {
                     List<NodeClass> row = new List<NodeClass>();
-                    for (int k = 0; k < nV +1 ; k++)
+                    for (int k = 0; k < nU + 1; k++)
                     {
-                        Point3d[] pts = ptsOnGuideCurve[k + j * (nV +1)];
+                        Point3d[] pts = ptsOnGuideCurve[k + j * (nU + 1)]; 
                         Point3d pt = pts[i];
                         NodeClass node = new NodeClass(cnt, pt);
                         row.Add(node);
@@ -115,19 +128,19 @@ namespace SolidFEM_BrickElement
                 levels.Add(level);
             }
 
-            
+
 
 
             // create elements with elementID, Nodes(with globalID and LocalID ) and mesh
 
             List<ElementClass> elementList = new List<ElementClass>();
-            int globalNodeID = 0;
+          
             int globalElementID = 0;
             for (int i = 0; i < levels.Count - 1; i++)
             {
                 List<List<NodeClass>> firstLevel = levels[i];
                 List<List<NodeClass>> nextLevel = levels[i + 1];
-                for (int j = 0; j < firstLevel.Count - 1; j++)
+                for (int j = 0; j < firstLevel.Count-1; j++)
                 {
                     List<NodeClass> firstBotRow = firstLevel[j];
                     List<NodeClass> NextBotRow = firstLevel[j + 1];
@@ -138,20 +151,13 @@ namespace SolidFEM_BrickElement
                     {
                         NodeClass n0 = new NodeClass(firstBotRow[k].GlobalID, 0, firstBotRow[k].Point);
                         NodeClass n1 = new NodeClass(firstBotRow[k + 1].GlobalID, 1, firstBotRow[k + 1].Point);
-                        NodeClass n2 = new NodeClass(NextBotRow[k].GlobalID, 2, NextBotRow[k].Point);
-                        NodeClass n3 = new NodeClass(NextBotRow[k + 1].GlobalID, 3, NextBotRow[k + 1].Point);
-                       
-
+                        NodeClass n2 = new NodeClass(NextBotRow[k+1].GlobalID, 2, NextBotRow[k+1].Point);
+                        NodeClass n3 = new NodeClass(NextBotRow[k].GlobalID, 3, NextBotRow[k].Point);
 
                         NodeClass n4 = new NodeClass(firstTopRow[k].GlobalID, 4, firstTopRow[k].Point);
                         NodeClass n5 = new NodeClass(firstTopRow[k + 1].GlobalID, 5, firstTopRow[k + 1].Point);
-                        NodeClass n6 = new NodeClass(NextTopRow[k].GlobalID, 6, NextTopRow[k].Point);
-                        NodeClass n7 = new NodeClass(NextTopRow[k + 1].GlobalID, 7, NextTopRow[k + 1].Point);
-                        
-
-
-
-                        globalNodeID += 8;
+                        NodeClass n6 = new NodeClass(NextTopRow[k+1].GlobalID, 6, NextTopRow[k+1].Point);
+                        NodeClass n7 = new NodeClass(NextTopRow[k].GlobalID, 7, NextTopRow[k].Point);
 
                         List<NodeClass> nodesElem = new List<NodeClass>() { n0, n1, n2, n3, n4, n5, n6, n7 };
                         Mesh mesh = new Mesh();
@@ -168,22 +174,16 @@ namespace SolidFEM_BrickElement
 
                         elementList.Add(new ElementClass(globalElementID, nodesElem, mesh));
                         globalElementID++;
-
-
                     }
                 }
 
             }
-
             #endregion
-
 
 
             #region output
-            // DA.SetDataList(0, meshList);
             DA.SetDataList(0, elementList);
             #endregion
-
 
         }
 
