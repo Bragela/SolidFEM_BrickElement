@@ -26,11 +26,14 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddBrepParameter("Brep", "B", "Base brep", GH_ParamAccess.item);
-            pManager.AddBrepParameter("Brep", "B", "Top brep", GH_ParamAccess.item);
+            pManager.AddBrepParameter("Base Surface", "B1", "Base surface", GH_ParamAccess.item);
+            pManager.AddBrepParameter("Top Surface", "B2", "Top surface", GH_ParamAccess.item);
+            pManager.AddCurveParameter("Guiding curve", "C", "Curve to guide lofting", GH_ParamAccess.item);
             pManager.AddIntegerParameter("U Count", "U", "Divitions in U direction", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("V Count", "V", "Divitions in V direction", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("W Count", "W", "Divitions in W direction", GH_ParamAccess.item);
+
+            pManager[2].Optional = true;
         }
 
         /// <summary>
@@ -53,15 +56,17 @@ namespace SolidFEM_BrickElement
             #region Input
             Brep baseBrep = new Brep();
             Brep topBrep = new Brep();
+            Curve guideCurve = new PolylineCurve();
             int nU = 0;
             int nV = 0;
             int nW = 0;
 
             DA.GetData(0, ref baseBrep);
             DA.GetData(1, ref topBrep);
-            DA.GetData(2, ref nU);
-            DA.GetData(3, ref nV);
-            DA.GetData(4, ref nW);
+            DA.GetData(2, ref guideCurve);
+            DA.GetData(3, ref nU);
+            DA.GetData(4, ref nV);
+            DA.GetData(5, ref nW);
             #endregion
 
 
@@ -79,17 +84,32 @@ namespace SolidFEM_BrickElement
 
             double dU = 1.0 / (double)nU;
             double dV = 1.0 / (double)nV;
-            
+
+   
+      
             List<Curve> allCrvs = new List<Curve>();
+            
             for (int i = 0; i < nV + 1; i++)
             {
                 for (int j = 0; j < nU + 1; j++)
                 {
                     Point3d stPt = baseSurface.PointAt((double)j * dU, (double)i * dV);
                     Point3d enPt = topSurface.PointAt((double)j * dU, (double)i * dV);
-                    List<Point3d> startEndPts = new List<Point3d>() {stPt, enPt};
-                    Curve curve = new PolylineCurve(startEndPts);
-                    allCrvs.Add(curve);
+
+                    if (guideCurve.IsValid == false ) 
+                    {
+                        List<Point3d> startEndPts = new List<Point3d>() { stPt, enPt };
+                        Curve curve = new PolylineCurve(startEndPts);
+                        allCrvs.Add(curve);
+                        
+                    }
+                    else if (guideCurve.IsValid == true)
+                    {
+                        Curve curveOriginal = (Curve)guideCurve.Duplicate();
+                        bool changeStartPt = curveOriginal.SetStartPoint(stPt);
+                        bool changeEndPt = curveOriginal.SetEndPoint(enPt);
+                        allCrvs.Add(curveOriginal);
+                    }
                 }
             }
 
