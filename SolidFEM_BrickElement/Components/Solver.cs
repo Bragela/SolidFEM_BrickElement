@@ -27,7 +27,8 @@ namespace SolidFEM_BrickElement
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddMeshParameter("Mesh", "M", "Mesh to be calculated", GH_ParamAccess.item);
-            pManager.AddVectorParameter("Forces","F","External loads on the box",GH_ParamAccess.item);
+            pManager.AddGenericParameter("Loads","L","External loads on the structure",GH_ParamAccess.list);
+            pManager.AddGenericParameter("Supports", "S", "Supports for the structure", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -35,13 +36,8 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddGenericParameter("Element", "E", "The calculated element", GH_ParamAccess.item);
-            pManager.AddPointParameter("Points", "P", "", GH_ParamAccess.list);
-            pManager.AddTextParameter("Debug_1", "D", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("Debug_2", "D", "", GH_ParamAccess.item);
-            pManager.AddTextParameter("Debug_3", "D", "", GH_ParamAccess.list);
-            pManager.AddTextParameter("Debug_4", "D", "", GH_ParamAccess.list);
-            // pManager.AddPointParameter("Box", "B", "", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Result", "R", "Result of the solver, with displacements, stresses, strains and deformed mesh", GH_ParamAccess.item);
+            pManager.AddTextParameter("Info", "I", "", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -53,12 +49,18 @@ namespace SolidFEM_BrickElement
         //inputs
 
             Mesh mesh = new Mesh();
-            Vector3d loadVec = new Vector3d();
+            List<LoadClass> loads = new List<LoadClass>();
+            List<SupportClass> sups = new List<SupportClass>();
             DA.GetData(0, ref mesh);
-            DA.GetData(1, ref loadVec);
+            DA.GetDataList(1, loads);
+            DA.GetDataList(2, sups);
 
+          
+            Vector3d loadVec = loads[0].loadVector;
 
-        //code
+            //code
+
+            List<string> info = new List<string>();
 
             //Extract mesh vertices
             Point3d[] pts = mesh.Vertices.ToPoint3dArray();
@@ -98,8 +100,10 @@ namespace SolidFEM_BrickElement
                 }
             }
 
-            //Create a long (24x1) force vector to be used in calculation of displacements
+            //Creates on element with ID, all nodes and mesh
+            ElementClass elem = new ElementClass(0, nodes, mesh);
 
+            //Create a long (24x1) force vector to be used in calculation of displacements
             Matrix<double> forceVec = Matrix<double>.Build.Dense(24, 1);
 
             
@@ -110,19 +114,18 @@ namespace SolidFEM_BrickElement
                 forceVec[i + 8, 0] = force.loadVector.Y;
                 forceVec[i + 16, 0] = force.loadVector.Z;
             }
-            /*
-            int count = 0;
-            foreach(LoadClass load in forces)
+
+            //Create stiffness matrix and calculate strain
+
+            Matrix<double> coords = Matrix<double>.Build.Dense(24, 1);
+
+            for (int i = 0; i < nodes.Count; i++)
             {
-                forceVec[count, 0] = load.loadVector.X;
-                forceVec[count + 1, 0] = load.loadVector.Y;
-                forceVec[count + 2, 0] = load.loadVector.Z;
-
-                count += 3;
+                NodeClass node = nodes[i];
+                coords[i, 0] = node.Point.X;
+                coords[i + 8, 0] = node.Point.Y;
+                coords[i + 16, 0] = node.Point.Z;
             }
-            */
-
-            //Create stiffness matrix
 
             MaterialClass steel = new MaterialClass("Steel", 210000, 0.3);
 
@@ -140,33 +143,23 @@ namespace SolidFEM_BrickElement
             List<Point3d> dummy_list = new List<Point3d>{pt_1, pt_2, pt_3, pt_4, pt_5, pt_6, pt_7, pt_8};
             
             Matrix<double> K = Matrix<double>.Build.Dense(24, 24);
+            Matrix<double> strains = Matrix<double>.Build.Dense(6, 8);
+            Matrix<double> stresses = Matrix<double>.Build.Dense(6, 8);
 
-            for(int i = 0; i < 8; i++)
+            for (int i = 0; i < 8; i++)
             {
-                Matrix<double> k = ConstructStiffnessMatrix(nodes, steel, dummy_list[i]);
+                var integrand = ConstructStiffnessMatrix(nodes, steel, dummy_list[i]);
+                Matrix<double> k = integrand.Item1;
                 K += k;
+
+                Matrix<double> strain = integrand.Item2 * coords;
+                strains.SetSubMatrix(0, i, strain);
+
+                Matrix<double> stress = integrand.Item3 * strain;
+                stresses.SetSubMatrix(0, i, stress);
             }
-
-            /*
-            int cnt = 0;
-            int cnt_2 = 8;
-
-            for (int i = 0; i < nodes.Count; i++)
-            {
-                NodeClass node = nodes[i];
-
-                if (node.support == fixd)
-                {
-
-                 K = K.RemoveRow(cnt).RemoveColumn(cnt).RemoveRow(cnt+cnt_2).RemoveColumn(cnt+cnt_2).RemoveRow(cnt+2*cnt_2).RemoveColumn(cnt+2*cnt_2);
-                 forceVec = forceVec.RemoveRow(cnt).RemoveRow(cnt+cnt_2).RemoveRow(cnt+2*cnt_2);
-                 cnt_2 = cnt_2 - 1;
-
-                 cnt -= 1;
-                }
-                cnt += 1;
-            }
-            */       
+            
+            //Set columns and rows of fixed nodes to 0
 
             for (int i = 0; i < nodes.Count; i++)
             {
@@ -175,11 +168,12 @@ namespace SolidFEM_BrickElement
                 {
                     K.ClearColumns(i, i + 8, i + 16);
                     K.ClearRows(i,i + 8,i + 16);
-                    //Forcevec set to zero
+
+                    forceVec.ClearRows(i, i + 8, i + 16);
                 }
             }
 
-
+            //Add 1 on the diagonal for all fixed nodes to make it inverseable
 
             for (int i = 0; i < nodes.Count; i++)
             {
@@ -193,34 +187,14 @@ namespace SolidFEM_BrickElement
             }
 
 
-
-
             Matrix<double> K_inv = K.Inverse(); 
             
             //u = Kr
 
             Matrix<double> u = K_inv.Multiply(forceVec);
 
-            /*
-            Matrix<double> u = Matrix<double>.Build.Dense(24,1);
-            int node_nr = 0;
-            int u_cnt = 0;
 
-            for(int i = 0; i < nodes.Count; i++)
-            {
-                NodeClass node = nodes[node_nr];
-                if (node.support == free)
-                {
-                    u[i ,0] = u_red[u_cnt,0];
-                    u[i + 8 ,0] = u_red[u_cnt + 1,0];
-                    u[i + 16 , 0] = u_red[u_cnt + 2, 0];
-
-                    u_cnt += 3;
-                }
-                node_nr += 1;
-            }
-            */
-
+            //Convert displacements back to cartesian coordinates
             Matrix<double> disp = Matrix<double>.Build.Dense(3, 8);
 
             
@@ -233,7 +207,8 @@ namespace SolidFEM_BrickElement
 
             }
 
-            ResultClass res = new ResultClass();
+            //Add displacements to nodes, to get new coordinates
+
             List<NodeClass> dispNodes = nodes;
             List<Point3d> dispPts = new List<Point3d>();
 
@@ -244,19 +219,56 @@ namespace SolidFEM_BrickElement
                 dispPts.Add(pt);
             }
 
-
-            //Creates on element with ID, all nodes and mesh
-            ElementClass elem = new ElementClass(0, nodes, mesh);
+            //Processing results
 
 
+            /*
+            List<List<double>> _stresses = new List<List<double>>();
+            List<List<double>> _strains = new List<List<double>>();
+            List<List<double>> _disps = new List<List<double>>();
+            */
+
+
+            Grasshopper.DataTree<double> _stresses = new Grasshopper.DataTree<double>();
+            Grasshopper.DataTree<double> _strains = new Grasshopper.DataTree<double>();
+            Grasshopper.DataTree<double> _disps = new Grasshopper.DataTree<double>();
+
+            for (int i = 0; i < stresses.ColumnCount; i++)
+            {
+                for (int j = 0; j < stresses.RowCount; j++)
+                {
+                    double stress = stresses.At(i,j);
+                    double strain = strains.At(i,j);
+                    Grasshopper.Kernel.Data.GH_Path path = new Grasshopper.Kernel.Data.GH_Path(i, j);
+                    _stresses.Add(stress,path);
+                    _strains.Add(strain, path);
+                }
+            }
+
+            for(int i = 0; i < disp.ColumnCount; i++)
+            {
+                for(int j = 0; j < disp.RowCount; j++)
+                {
+                    double node_disp = disp.At(i,j);
+                    Grasshopper.Kernel.Data.GH_Path path = new Grasshopper.Kernel.Data.GH_Path(i, j);
+                    _disps.Add(node_disp,path);
+                }
+            }
+
+            
+
+
+            Mesh new_mesh = new Mesh();
+
+            //Create results
+            ResultClass res = new ResultClass(_disps, _stresses, _strains, new_mesh);
             
 
             //outputs
 
-            DA.SetData(0, elem);
-            DA.SetDataList(1, dispPts);
-            DA.SetData(2, disp.ToString());
-            DA.SetData(3, K.ToString());
+            DA.SetData(0, res);
+            DA.SetDataList(1, info);
+
 
 
 
@@ -403,7 +415,7 @@ namespace SolidFEM_BrickElement
                 return derivatedShapeMat;
             }
 
-            Matrix<double> ConstructStiffnessMatrix(List<NodeClass> _nodes, MaterialClass material, Point3d _dummy) //Construction of the B matrix
+            (Matrix<double>, Matrix<double>, Matrix<double>) ConstructStiffnessMatrix(List<NodeClass> _nodes, MaterialClass material, Point3d _dummy) //Construction of the B matrix
             {
                 //Shape functions       Ni = 1/8(1+XiX)(1+NiN)(1+YiY)
 
@@ -463,12 +475,12 @@ namespace SolidFEM_BrickElement
                 C[0, 1] = C[0, 2] = C[1, 0] = C[1, 2] = C[2, 0] = C[2, 1] = beta;
                 C[3, 3] = C[4, 4] = C[5, 5] = gamma;
 
-                Matrix<double> b_trans = B.Transpose();
+                Matrix<double> B_trans = B.Transpose();
 
                 //Constructing the integrand by multiplying B transposed with C, then multiplied with B and lastly multiplied with the determinant of the jacobian
-                Matrix<double> integrand = b_trans*(C)*(B)*(jacobi_det);
+                Matrix<double> integrand = B_trans*(C)*(B)*(jacobi_det);
 
-                return integrand;
+                return (integrand,B,C);
             }
 
             

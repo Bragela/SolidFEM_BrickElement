@@ -23,9 +23,9 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddNumberParameter("Displacements", "D", "List of displacements", GH_ParamAccess.list);
-            pManager.AddNumberParameter("Stresses", "s", "List of stresses", GH_ParamAccess.list);
-            pManager.AddNumberParameter("Strains", "e", "List of strains", GH_ParamAccess.list);
+            pManager.AddMatrixParameter("Displacements", "D", "List of displacements", GH_ParamAccess.tree);
+            pManager.AddMatrixParameter("Stresses", "s", "List of stresses", GH_ParamAccess.tree);
+            pManager.AddMatrixParameter("Strains", "e", "List of strains", GH_ParamAccess.tree);
             pManager.AddMeshParameter("Mesh", "M", "Deformed mesh", GH_ParamAccess.item);
         }
 
@@ -44,9 +44,9 @@ namespace SolidFEM_BrickElement
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             //inputs
-            List<double> disp = new List<double>();
-            List<double> stresses = new List<double>();
-            List<double> strains = new List<double>();
+            Grasshopper.DataTree<double> disp = new Grasshopper.DataTree<double>();
+            Grasshopper.DataTree<double> stresses = new Grasshopper.DataTree<double>();
+            Grasshopper.DataTree<double> strains = new Grasshopper.DataTree<double>();
             Mesh mesh = new Mesh();
 
             DA.GetData(0, ref disp);
