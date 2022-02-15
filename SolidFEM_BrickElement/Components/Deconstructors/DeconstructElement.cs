@@ -12,7 +12,7 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
         /// Initializes a new instance of the DeconstructElement class.
         /// </summary>
         public DeconstructElement()
-          : base("DeconstructElement", "DeconstructElement",
+          : base("Deconstruct Elements", "Deconstruct Element",
               "Description",
               "SolidFEM", "SolidFEM_Brick")
         {
@@ -23,7 +23,7 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Element", "E", "A ElementClass object", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Elements", "E", "A ElementClass object", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -31,9 +31,9 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddNumberParameter("Global ID", "ID", "Global ID of the element", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("Global ID", "ID", "Global ID of the element", GH_ParamAccess.list);
             pManager.AddGenericParameter("Nodes", "N", "The nodes of the element", GH_ParamAccess.list);
-            pManager.AddMeshParameter("Mesh", "M", "The elements mesh", GH_ParamAccess.item);
+            pManager.AddMeshParameter("Mesh", "M", "The elements mesh", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -43,14 +43,25 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             //inputs
-            ElementClass elem = new ElementClass();
+            List<ElementClass> elems = new List<ElementClass>();
+            DA.GetDataList(0, elems);
 
-            DA.GetData(0, ref elem);
+            List<int> idList = new List<int>();
+            List<List<NodeClass>> nodes = new List<List<NodeClass>>();
+            List<Mesh> meshes = new List<Mesh>();
+
+            foreach(ElementClass el in elems)
+            {
+
+                idList.Add(el.ID);
+                nodes.Add(el.Nodes);
+                meshes.Add(el.Mesh);
+            }
 
             //outputs
-            DA.SetData(0, elem.ID);
-            DA.SetData(1, elem.Nodes);
-            DA.SetData(2, elem.Mesh);
+            DA.SetDataList(0, idList);
+            DA.SetDataList(1, nodes);
+            DA.SetDataList(2, meshes);
         }
 
         /// <summary>

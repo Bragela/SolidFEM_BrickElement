@@ -23,6 +23,13 @@ namespace SolidFEM_BrickElement
 
         }
 
+        public ElementClass(int _ID, List<NodeClass> _Nodes)
+        {
+            ID = _ID;
+            Nodes = _Nodes;
+            
+        }
+
         public ElementClass(int _ID, List<NodeClass> _Nodes, Mesh _mesh)
         {
             ID = _ID;
