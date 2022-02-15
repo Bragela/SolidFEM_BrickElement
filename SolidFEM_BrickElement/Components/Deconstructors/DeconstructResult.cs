@@ -31,10 +31,10 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddNumberParameter("Displacements", "D", "List of displacements", GH_ParamAccess.tree);
+            pManager.AddGenericParameter("Displacements", "D", "List of displacements", GH_ParamAccess.list);
             pManager.AddPointParameter("Points","P","List of new points",GH_ParamAccess.list);
-            pManager.AddNumberParameter("Stresses", "s", "List of stresses", GH_ParamAccess.tree);
-            pManager.AddNumberParameter("Strains", "e", "List of strains", GH_ParamAccess.tree);
+            pManager.AddGenericParameter("Stresses", "s", "List of stresses", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Strains", "e", "List of strains", GH_ParamAccess.list);
             pManager.AddMeshParameter("Mesh", "M", "Deformed mesh", GH_ParamAccess.item);
         }
 
@@ -49,10 +49,10 @@ namespace SolidFEM_BrickElement
             DA.GetData(0, ref res);
 
             //outputs
-            DA.SetDataTree(0, res.displacements);
+            DA.SetDataList(0, res.displacements);
             DA.SetDataList(1, res.pts);
-            DA.SetDataTree(2, res.stresses);
-            DA.SetDataTree(3, res.strains);
+            DA.SetDataList(2, res.stresses);
+            DA.SetDataList(3, res.strains);
             DA.SetData(4, res.mesh);
         }
 

@@ -31,9 +31,9 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddBooleanParameter("Tx", "Tx", "Type of support in X direction (true = free, false = fixed)", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Ty", "Ty", "Type of support in Y direction (true = free, false = fixed)", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Tz", "Tz", "Type of support in Z direction (true = free, false = fixed)", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Tx", "Tx", "Type of support in X direction (true = fixed, false = free)", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Ty", "Ty", "Type of support in Y direction (true = fixed, false = free)", GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Tz", "Tz", "Type of support in Z direction (true = fixed, false = free)", GH_ParamAccess.item);
         }
 
         /// <summary>

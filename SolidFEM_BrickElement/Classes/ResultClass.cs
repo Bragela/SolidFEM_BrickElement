@@ -12,10 +12,10 @@ namespace SolidFEM_BrickElement
     internal class ResultClass
     {
         //Properties
-        public Grasshopper.DataTree<double> displacements;
+        public List<List<List<double>>> displacements;
         public List<Point3d> pts;
-        public Grasshopper.DataTree<double> stresses;
-        public Grasshopper.DataTree<double> strains;
+        public List<List<List<double>>> stresses;
+        public List<List<List<double>>> strains;
         public Mesh mesh;
 
         //Constructors
@@ -24,7 +24,7 @@ namespace SolidFEM_BrickElement
 
         }
 
-        public ResultClass(Grasshopper.DataTree<double> _disp, List<Point3d> _pts, Grasshopper.DataTree<double> _stresses, Grasshopper.DataTree<double> _strains, Mesh _mesh)
+        public ResultClass(List<List<List<double>>> _disp, List<Point3d> _pts, List<List<List<double>>> _stresses, List<List<List<double>>> _strains, Mesh _mesh)
         {
             displacements = _disp;
             pts = _pts;

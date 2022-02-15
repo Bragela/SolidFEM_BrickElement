@@ -11,7 +11,7 @@ namespace SolidFEM_BrickElement
     public class SupportClass
     {
         //Properties
-        // True = free, false = fixed
+        // True = fixed, false = free
 
         public Point3d pt;
         public Boolean Tx;
@@ -25,8 +25,9 @@ namespace SolidFEM_BrickElement
 
         }
 
-        public SupportClass(Boolean _Tx, Boolean _Ty, Boolean _Tz)
+        public SupportClass(Point3d _pt, Boolean _Tx, Boolean _Ty, Boolean _Tz)
         {
+            pt = _pt;
             Tx = _Tx;
             Ty = _Ty;
             Tz = _Tz;

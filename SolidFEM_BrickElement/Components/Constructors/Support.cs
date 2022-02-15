@@ -23,9 +23,10 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddBooleanParameter("Translation X", "Tx", "Translation in X direction (true = free, false = fixed)", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Translation Y", "Ty", "Translation in Y direction (true = free, false = fixed)", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Translation Z", "Tz", "Translation in Z direction (true = free, false = fixed)", GH_ParamAccess.item);
+            pManager.AddPointParameter("","","",GH_ParamAccess.item);
+            pManager.AddBooleanParameter("Translation X", "Tx", "Translation in X direction (true = fixed, false = free)", GH_ParamAccess.item, false);
+            pManager.AddBooleanParameter("Translation Y", "Ty", "Translation in Y direction (true = fixed, false = free)", GH_ParamAccess.item, false);
+            pManager.AddBooleanParameter("Translation Z", "Tz", "Translation in Z direction (true = fixed, false = free)", GH_ParamAccess.item, false);
         }
 
         /// <summary>
@@ -43,16 +44,18 @@ namespace SolidFEM_BrickElement
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             //inputs
+            Point3d pt = new Point3d();
             Boolean Tx = true;
             Boolean Ty = true;
             Boolean Tz = true;
 
-            DA.GetData(0, ref Tx);
-            DA.GetData(1, ref Ty);
-            DA.GetData(2, ref Tz);
+            DA.GetData(0, ref pt);
+            DA.GetData(1, ref Tx);
+            DA.GetData(2, ref Ty);
+            DA.GetData(3, ref Tz);
 
             //code
-            SupportClass sup = new SupportClass(Tx, Ty, Tz);
+            SupportClass sup = new SupportClass(pt, Tx, Ty, Tz);
 
             //outputs
             DA.SetData(0, sup);

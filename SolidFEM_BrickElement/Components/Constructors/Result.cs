@@ -23,10 +23,10 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddMatrixParameter("Displacements", "D", "List of displacements", GH_ParamAccess.tree);
+            pManager.AddNumberParameter("Displacements", "D", "List of displacements", GH_ParamAccess.list);
             pManager.AddPointParameter("Points", "P", "List of new points", GH_ParamAccess.list);
-            pManager.AddMatrixParameter("Stresses", "s", "List of stresses", GH_ParamAccess.tree);
-            pManager.AddMatrixParameter("Strains", "e", "List of strains", GH_ParamAccess.tree);
+            pManager.AddNumberParameter("Stresses", "s", "List of stresses", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Strains", "e", "List of strains", GH_ParamAccess.list);
             pManager.AddMeshParameter("Mesh", "M", "Deformed mesh", GH_ParamAccess.item);
         }
 
@@ -45,16 +45,16 @@ namespace SolidFEM_BrickElement
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             //inputs
-            Grasshopper.DataTree<double> disp = new Grasshopper.DataTree<double>();
+            List<List<List<double>>> disp = new List<List<List<double>>>();
             List<Point3d> pts = new List<Point3d>();
-            Grasshopper.DataTree<double> stresses = new Grasshopper.DataTree<double>();
-            Grasshopper.DataTree<double> strains = new Grasshopper.DataTree<double>();
+            List<List<List<double>>> stresses = new List<List<List<double>>>();
+            List<List<List<double>>> strains = new List<List<List<double>>>();
             Mesh mesh = new Mesh();
 
-            DA.GetData(0, ref disp);
-            DA.GetDataList(0, pts);
-            DA.GetData(2, ref stresses);
-            DA.GetData(3, ref strains);
+            DA.GetDataList(0, disp);
+            DA.GetDataList(1, pts);
+            DA.GetDataList(2, stresses);
+            DA.GetDataList(3, strains);
             DA.GetData(4, ref mesh);
 
             //code
