@@ -31,7 +31,7 @@ namespace SolidFEM_BrickElement
             pManager.AddCurveParameter("Guiding curve", "C", "Curve to guide lofting", GH_ParamAccess.item);
             pManager.AddIntegerParameter("U Count", "U", "Divitions in U direction", GH_ParamAccess.item, 5);
             pManager.AddIntegerParameter("V Count", "V", "Divitions in V direction", GH_ParamAccess.item, 5);
-            pManager.AddIntegerParameter("W Count", "W", "Divitions in W direction", GH_ParamAccess.item);
+            pManager.AddIntegerParameter("W Count", "W", "Divitions in W direction", GH_ParamAccess.item, 5);
 
             pManager[2].Optional = true;
         }
