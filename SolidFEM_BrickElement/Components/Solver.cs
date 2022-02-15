@@ -227,33 +227,9 @@ namespace SolidFEM_BrickElement
 
             //Processing results
 
-            Grasshopper.DataTree<double> _stresses = new Grasshopper.DataTree<double>();
-            Grasshopper.DataTree<double> _strains = new Grasshopper.DataTree<double>();
-            Grasshopper.DataTree<double> _disps = new Grasshopper.DataTree<double>();
-
-            for (int i = 0; i < stresses.ColumnCount; i++)
-            {
-                for (int j = 0; j < stresses.RowCount; j++)
-                {
-                    double stress = stresses.At(i,j);
-                    double strain = strains.At(i,j);
-                    Grasshopper.Kernel.Data.GH_Path path = new Grasshopper.Kernel.Data.GH_Path(i, j);
-                    _stresses.Add(stress,path);
-                    _strains.Add(strain, path);
-                }
-            }
-
-            for(int i = 0; i < disp.ColumnCount; i++)
-            {
-                for(int j = 0; j < disp.RowCount; j++)
-                {
-                    double node_disp = disp.At(i,j);
-                    Grasshopper.Kernel.Data.GH_Path path = new Grasshopper.Kernel.Data.GH_Path(i, j);
-                    _disps.Add(node_disp,path);
-                }
-            }
-
-            
+            Grasshopper.DataTree<double> _stresses = matrixToDataTree(stresses);
+            Grasshopper.DataTree<double> _strains = matrixToDataTree(strains);
+            Grasshopper.DataTree<double> _disps = matrixToDataTree(disp);
 
 
             Mesh new_mesh = new Mesh();
@@ -481,7 +457,22 @@ namespace SolidFEM_BrickElement
                 return (integrand,B,C);
             }
 
-            
+            Grasshopper.DataTree<double> matrixToDataTree(Matrix<double> matrix)
+            {
+                Grasshopper.DataTree<double> _dataTree = new Grasshopper.DataTree<double>();
+                for (int i = 0; i < matrix.ColumnCount; i++)
+                {
+                    for (int j = 0; j < matrix.RowCount; j++)
+                    {
+                        double x = matrix.At(i, j);
+                        Grasshopper.Kernel.Data.GH_Path path = new Grasshopper.Kernel.Data.GH_Path(i);
+                        _dataTree.Add(x,path);
+                    }
+
+                }
+
+                return _dataTree;
+            }
 
             #endregion
         }
