@@ -32,6 +32,7 @@ namespace SolidFEM_BrickElement
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddNumberParameter("Displacements", "D", "List of displacements", GH_ParamAccess.tree);
+            pManager.AddPointParameter("Points","P","List of new points",GH_ParamAccess.list);
             pManager.AddNumberParameter("Stresses", "s", "List of stresses", GH_ParamAccess.tree);
             pManager.AddNumberParameter("Strains", "e", "List of strains", GH_ParamAccess.tree);
             pManager.AddMeshParameter("Mesh", "M", "Deformed mesh", GH_ParamAccess.item);
@@ -49,9 +50,10 @@ namespace SolidFEM_BrickElement
 
             //outputs
             DA.SetDataTree(0, res.displacements);
-            DA.SetDataTree(1, res.stresses);
-            DA.SetDataTree(2, res.strains);
-            DA.SetData(3, res.mesh);
+            DA.SetDataList(1, res.pts);
+            DA.SetDataTree(2, res.stresses);
+            DA.SetDataTree(3, res.strains);
+            DA.SetData(4, res.mesh);
         }
 
         /// <summary>

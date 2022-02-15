@@ -13,6 +13,7 @@ namespace SolidFEM_BrickElement
     {
         //Properties
         public Grasshopper.DataTree<double> displacements;
+        public List<Point3d> pts;
         public Grasshopper.DataTree<double> stresses;
         public Grasshopper.DataTree<double> strains;
         public Mesh mesh;
@@ -23,9 +24,10 @@ namespace SolidFEM_BrickElement
 
         }
 
-        public ResultClass(Grasshopper.DataTree<double> _disp, Grasshopper.DataTree<double> _stresses, Grasshopper.DataTree<double> _strains, Mesh _mesh)
+        public ResultClass(Grasshopper.DataTree<double> _disp, List<Point3d> _pts, Grasshopper.DataTree<double> _stresses, Grasshopper.DataTree<double> _strains, Mesh _mesh)
         {
             displacements = _disp;
+            pts = _pts;
             stresses = _stresses;
             strains = _strains;
             mesh = _mesh; 

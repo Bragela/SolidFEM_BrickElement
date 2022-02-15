@@ -5,6 +5,7 @@ using Grasshopper.Kernel;
 using Rhino.Geometry;
 using MathNet.Numerics.LinearAlgebra;
 using System.Diagnostics;
+using System.Linq;
 
 
 namespace SolidFEM_BrickElement
@@ -60,16 +61,35 @@ namespace SolidFEM_BrickElement
 
             //code
 
+            //Create a list of nodes with no duplicates
+
+            List<NodeClass> _nodes_ = new List<NodeClass>();
+            List<int> IDs = new List<int>();
+            for (int i = 0; i < elems.Count; i++)
+            {
+                for(int j = 0; j < elems[i].Nodes.Count; j++)
+                {
+                    NodeClass node = elems[i].Nodes[j];
+                    if (IDs.Contains(node.GlobalID) == false )
+                    {
+                        _nodes_.Add(node);
+                        IDs.Add(node.GlobalID);
+                    } 
+                }
+            }
+
             //Create empty global stiffness matrix [nNodes*ndof,nNodes*ndof], and empty connectivity matrix
+            int nNodes = _nodes_.Count;
+            int nDofs = 3;
 
-            int nDof = 3;
-            int nEls = elems.Count;
-
-            Matrix<double> bigK = Matrix<double>.Build.Dense(nDof * nEls, nDof * nEls);
+            Matrix<double> bigK = Matrix<double>.Build.Dense(nDofs * nNodes, nDofs * nNodes);
 
             //Loop through all elements (elems.Count). Create connectivity matrix and local stiffness matrix, connect to global stiffness matrix
 
-                Mesh mesh = elems[0].Mesh;
+
+
+
+            Mesh mesh = elems[0].Mesh;
                 Vector3d loadVec = loads[0].loadVector;
 
                 //Extract mesh vertices
@@ -239,7 +259,7 @@ namespace SolidFEM_BrickElement
 
             //Create results
             Mesh new_mesh = new Mesh();
-            ResultClass res = new ResultClass(_disps, _stresses, _strains, new_mesh);
+            ResultClass res = new ResultClass(_disps, dispPts, _stresses, _strains, new_mesh);
 
             //outputs
 
