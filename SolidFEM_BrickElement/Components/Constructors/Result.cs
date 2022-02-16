@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Types;
+using Grasshopper.Kernel.Data;
 using Rhino.Geometry;
 
 namespace SolidFEM_BrickElement
@@ -23,10 +25,10 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddNumberParameter("Displacements", "D", "List of displacements", GH_ParamAccess.list);
-            pManager.AddPointParameter("Points", "P", "List of new points", GH_ParamAccess.list);
-            pManager.AddNumberParameter("Stresses", "s", "List of stresses", GH_ParamAccess.list);
-            pManager.AddNumberParameter("Strains", "e", "List of strains", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Displacements", "D", "List of displacements", GH_ParamAccess.tree);
+            pManager.AddPointParameter("Points", "P", "List of new points", GH_ParamAccess.tree);
+            pManager.AddNumberParameter("Stresses", "s", "List of stresses", GH_ParamAccess.tree);
+            pManager.AddNumberParameter("Strains", "e", "List of strains", GH_ParamAccess.tree);
             pManager.AddMeshParameter("Mesh", "M", "Deformed mesh", GH_ParamAccess.item);
         }
 
@@ -45,16 +47,17 @@ namespace SolidFEM_BrickElement
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             //inputs
-            List<List<List<double>>> disp = new List<List<List<double>>>();
-            List<Point3d> pts = new List<Point3d>();
-            List<List<List<double>>> stresses = new List<List<List<double>>>();
-            List<List<List<double>>> strains = new List<List<List<double>>>();
+            GH_Structure<GH_Number> disp = new GH_Structure<GH_Number>();
+            GH_Structure<GH_Number> stresses = new GH_Structure<GH_Number>();
+            GH_Structure<GH_Number> strains = new GH_Structure<GH_Number>();
+            GH_Structure<GH_Point> pts = new GH_Structure<GH_Point>();
+
             Mesh mesh = new Mesh();
 
-            DA.GetDataList(0, disp);
-            DA.GetDataList(1, pts);
-            DA.GetDataList(2, stresses);
-            DA.GetDataList(3, strains);
+            DA.GetDataTree(0, out disp);
+            DA.GetDataTree(1, out pts);
+            DA.GetDataTree(2, out stresses);
+            DA.GetDataTree(3, out strains);
             DA.GetData(4, ref mesh);
 
             //code

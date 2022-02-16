@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Data;
+using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 
 namespace SolidFEM_BrickElement
@@ -12,10 +14,10 @@ namespace SolidFEM_BrickElement
     internal class ResultClass
     {
         //Properties
-        public List<List<List<double>>> displacements;
-        public List<Point3d> pts;
-        public List<List<List<double>>> stresses;
-        public List<List<List<double>>> strains;
+        public GH_Structure<GH_Number> displacements;
+        public GH_Structure<GH_Point> pts;
+        public GH_Structure<GH_Number> stresses;
+        public GH_Structure<GH_Number> strains;
         public Mesh mesh;
 
         //Constructors
@@ -24,7 +26,7 @@ namespace SolidFEM_BrickElement
 
         }
 
-        public ResultClass(List<List<List<double>>> _disp, List<Point3d> _pts, List<List<List<double>>> _stresses, List<List<List<double>>> _strains, Mesh _mesh)
+        public ResultClass(GH_Structure<GH_Number> _disp, GH_Structure<GH_Point> _pts, GH_Structure<GH_Number> _stresses, GH_Structure<GH_Number> _strains, Mesh _mesh)
         {
             displacements = _disp;
             pts = _pts;
