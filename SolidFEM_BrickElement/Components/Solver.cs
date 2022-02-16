@@ -266,7 +266,7 @@ namespace SolidFEM_BrickElement
                     Point3d evalPt = getGenCoords(node.LocalID);
 
                     Matrix<double> shapeFunc = GetShapeFunctions(_nodes.Count, evalPt.X, evalPt.Y, evalPt.Z);
-                    disp.SetSubMatrix(0, i, shapeFunc.Multiply(v));
+                    disp.SetSubMatrix(0, j, shapeFunc.Multiply(v));
                 }
                 
                 disp_list.Add(disp);
@@ -276,9 +276,9 @@ namespace SolidFEM_BrickElement
                 Matrix<double> strains = Matrix<double>.Build.Dense(6, 8);
                 Matrix<double> stresses = Matrix<double>.Build.Dense(6, 8);
 
-                for (int j = 0; j < 8; j++)
+                for (int j = 0; j < _nodes.Count; j++)
                 {
-                    var integrand = ConstructStiffnessMatrix(_nodes, steel, dummy_list[i]);
+                    var integrand = ConstructStiffnessMatrix(_nodes, steel, dummy_list[j]);
 
                     Matrix<double> strain = integrand.Item2 * v;
                     strains.SetSubMatrix(0, j, strain);
