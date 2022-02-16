@@ -85,30 +85,49 @@ namespace SolidFEM_BrickElement
             double dU = 1.0 / (double)nU;
             double dV = 1.0 / (double)nV;
 
-   
-      
+            Vector3d normalBaseSurf = baseSurface.NormalAt(0, 0);
+            Vector3d normalTopSurf = topSurface.NormalAt(0, 0);
+
+            Boolean check = false;
+
+            if(normalBaseSurf.Z > 0 && normalTopSurf.Z < 0 || normalBaseSurf.Z < 0 && normalTopSurf.Z > 0)
+            {
+                check = true;
+            }
+
             List<Curve> allCrvs = new List<Curve>();
             
             for (int i = 0; i < nV + 1; i++)
             {
                 for (int j = 0; j < nU + 1; j++)
                 {
-                    Point3d stPt = baseSurface.PointAt((double)j * dU, (double)i * dV);
-                    Point3d enPt = topSurface.PointAt((double)j * dU, (double)i * dV);
-
-                    if (guideCurve.IsValid == false ) 
+                    Point3d stPt = new Point3d();
+                    Point3d enPt = new Point3d();
+                    
+                    if (check)
                     {
-                        List<Point3d> startEndPts = new List<Point3d>() { stPt, enPt };
-                        Curve curve = new PolylineCurve(startEndPts);
-                        allCrvs.Add(curve);
-                        
+                        stPt = baseSurface.PointAt((double)j * dU, (double)i * dV);
+                        enPt = topSurface.PointAt((double)i * dU, (double)j * dV);
                     }
-                    else if (guideCurve.IsValid == true)
+                    else
+                    {
+                        stPt = baseSurface.PointAt((double)j * dU, (double)i * dV);
+                        enPt = topSurface.PointAt((double)j * dU, (double)i * dV);
+                    }
+                    
+
+                    if (guideCurve.IsValid) 
                     {
                         Curve curveOriginal = (Curve)guideCurve.Duplicate();
                         bool changeStartPt = curveOriginal.SetStartPoint(stPt);
                         bool changeEndPt = curveOriginal.SetEndPoint(enPt);
                         allCrvs.Add(curveOriginal);
+                    }
+                    else
+                    {
+                        List<Point3d> startEndPts = new List<Point3d>() { stPt, enPt };
+                        Curve curve = new PolylineCurve(startEndPts);
+                        allCrvs.Add(curve);
                     }
                 }
             }
