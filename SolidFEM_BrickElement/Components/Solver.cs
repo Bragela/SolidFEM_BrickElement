@@ -549,7 +549,7 @@ namespace SolidFEM_BrickElement
                 {
                     for (int l = 0; l < list_mat.RowCount; l++) //Going thrugh each row
                     {
-                        GH_Path path = new GH_Path(j,i);
+                        GH_Path path = new GH_Path(i,j);
                         GH_Number val = new GH_Number();
                         GH_Convert.ToGHNumber(list_mat[l, j], 0, ref val);
                         tree.Append(val, path);
