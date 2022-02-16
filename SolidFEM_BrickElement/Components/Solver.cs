@@ -47,7 +47,7 @@ namespace SolidFEM_BrickElement
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            //inputs
+            #region
 
             List<ElementClass> elems = new List<ElementClass>();
             List<LoadClass> loads = new List<LoadClass>();
@@ -58,9 +58,15 @@ namespace SolidFEM_BrickElement
 
             List<string> info = new List<string>();
 
-            //code
+            #endregion
 
-            MaterialClass steel = new MaterialClass("Steel", 210000, 0.3);
+
+            #region code
+
+            MaterialClass steel = new MaterialClass("Steel", 210000, 0.3);  // creates a material class steel
+
+
+            // creates 2x2x2 gauss integration points (full integration) 
 
             double val = 1.0 / Math.Sqrt(3);
 
@@ -74,6 +80,7 @@ namespace SolidFEM_BrickElement
             Point3d pt_8 = new Point3d(-val, -val, -val);
 
             List<Point3d> dummy_list = new List<Point3d> { pt_1, pt_2, pt_3, pt_4, pt_5, pt_6, pt_7, pt_8 };
+
 
             //Create a list of nodes with no duplicates
 
@@ -92,21 +99,23 @@ namespace SolidFEM_BrickElement
                 }
             }
 
+
             //Create empty global stiffness matrix [nNodes*ndof,nNodes*ndof], and empty connectivity matrix
+
             int nNodes = nodes.Count;
             int nDofs = 3;
 
-            Matrix<double> bigK = Matrix<double>.Build.Dense(nDofs * nNodes, nDofs * nNodes);
+            Matrix<double> globalK = Matrix<double>.Build.Dense(nDofs * nNodes, nDofs * nNodes);   // global stiffness matrix for the system
 
-            //Loop through all elements (elems.Count). Create connectivity matrix and local stiffness matrix, connect to global stiffness matrix
+            //Loop through all elements (elems.Count). Create connectivity matrix (a) and local stiffness matrix (localK), connect to global stiffness matrix
 
             for(int i = 0; i < elems.Count; i++)
             {
-                List<NodeClass> _nodes_ = elems[i].Nodes;
+                List<NodeClass> _nodes_ = elems[i].Nodes;   // the 8 nodes for element i
 
-                //Create connectivity matrix
+                //Create connectivity matrix for element i
 
-                Matrix<double> a_mat = Matrix<double>.Build.Dense(nDofs * _nodes_.Count, bigK.ColumnCount);
+                Matrix<double> a_mat = Matrix<double>.Build.Dense(nDofs * _nodes_.Count, globalK.ColumnCount);     // as many rows as localDOF for element i, as many columns as globalDOF in the system
 
                 for(int j = 0; j < _nodes_.Count; j++)
                 {
@@ -124,35 +133,36 @@ namespace SolidFEM_BrickElement
                     a_mat[ID_2_1, ID_2_2] = 1;
                 }
 
-                //Create stiffness matrix
+                //Create local stiffness matrix for element i
 
-                Matrix<double> K = Matrix<double>.Build.Dense(24, 24);
+                Matrix<double> localK = Matrix<double>.Build.Dense(24, 24);
 
-                for (int j = 0; j < 8; j++)
+                for (int j = 0; j < _nodes_.Count; j++)
                 {
                     var integrand = ConstructStiffnessMatrix(_nodes_, steel, dummy_list[j]);
                     Matrix<double> k = integrand.Item1;
-                    K += k;
+                    localK += k;
                 }
 
-                bigK += a_mat.Transpose() * K * a_mat;
+                globalK += a_mat.Transpose() * localK * a_mat;      // assembly of the global striffness matrix
             }
+
 
             //Create list of supports and load vector
 
-            Matrix<double> loadVec = Matrix<double>.Build.Dense(nNodes * nDofs, 1);
-
-            Vector<double> _sups = Vector<double>.Build.Dense(nNodes * nDofs);
+            Matrix<double> loadVec = Matrix<double>.Build.Dense(nNodes * nDofs, 1);     // create load vector
+            Vector<double> _sups = Vector<double>.Build.Dense(nNodes * nDofs);          // create support vector
 
             for (int i = 0; i < nNodes; i++)
             {
                 //Create support list zeroing columns and rows in K
-                NodeClass node = nodes[i];
-                Point3d nodePt = node.Point;
-                int ID = node.GlobalID;
+
+                NodeClass node = nodes[i];             
+                Point3d nodePt = node.Point;            
+                int ID = node.GlobalID;                
                 for (int j = 0; j < sups.Count; j++)
                 {
-                    SupportClass sup = sups[j];
+                    SupportClass sup = sups[j];         
 
                     if (nodePt == sup.pt)
                     {
@@ -186,7 +196,7 @@ namespace SolidFEM_BrickElement
                     }
                 }
             }
-            info.Add(bigK.ToMatrixString());
+            info.Add(globalK.ToMatrixString());
             
             //Set columns and rows of fixed nodes to 0
 
@@ -194,8 +204,8 @@ namespace SolidFEM_BrickElement
             {
                 if (_sups[i] == 1)
                 {
-                    bigK.ClearColumn(i);
-                    bigK.ClearRow(i);
+                    globalK.ClearColumn(i);
+                    globalK.ClearRow(i);
 
                     loadVec.ClearRow(i);
                 }
@@ -207,20 +217,18 @@ namespace SolidFEM_BrickElement
             {
                 if (_sups[i] == 1)
                 {
-                    bigK[i, i] = 1;
-                    bigK[i, i] = 1;
-                    bigK[i, i] = 1;
+                    globalK[i, i] = 1;
+                    globalK[i, i] = 1;
+                    globalK[i, i] = 1;
                 }
             }
 
 
-            Matrix<double> bigK_inv = bigK.Inverse(); 
+            Matrix<double> globalK_inv = globalK.Inverse(); 
             
             //u = Kr
 
-            
-
-            Matrix<double> r = bigK_inv.Multiply(loadVec);
+            Matrix<double> r = globalK_inv.Multiply(loadVec);
 
             info.Add(r.ToMatrixString());
 
@@ -235,7 +243,7 @@ namespace SolidFEM_BrickElement
 
                 //Create connectivity matrix
 
-                Matrix<double> a_mat = Matrix<double>.Build.Dense(nDofs * _nodes.Count, bigK.ColumnCount);
+                Matrix<double> a_mat = Matrix<double>.Build.Dense(nDofs * _nodes.Count, globalK.ColumnCount);
 
                 a_mat.Clear();
 
@@ -248,6 +256,7 @@ namespace SolidFEM_BrickElement
                     a_mat[lID, gID] = 1;
                     a_mat[lID + _nodes.Count, gID + nNodes] = 1;
                     a_mat[lID + _nodes.Count * 2, gID + nNodes * 2] = 1;
+
                 }
 
 
@@ -263,8 +272,13 @@ namespace SolidFEM_BrickElement
                     NodeClass node = _nodes[j];
                     Point3d evalPt = getGenCoords(node.LocalID);
 
-                    Matrix<double> shapeFunc = GetShapeFunctions(_nodes.Count, evalPt.X, evalPt.Y, evalPt.Z);
-                    disp.SetSubMatrix(0, i, shapeFunc.Multiply(v));
+                    Matrix<double> shapeFunc = GetShapeFunctions(_nodes.Count, evalPt.X, evalPt.Y, evalPt.Z); //-------------------------------------------------
+                    Matrix<double> x = shapeFunc.Multiply(v);
+                    disp[0, j] = x[0, 0];
+                    disp[1, j] = x[1, 0];
+                    disp[2, j] = x[2, 0];
+
+                    // disp.SetSubMatrix(0, i, shapeFunc.Multiply(v));
                 }
                 
                 disp_list.Add(disp);
@@ -325,14 +339,15 @@ namespace SolidFEM_BrickElement
 
 
             ResultClass res = new ResultClass(_disps, clean_pts, _stresses, _strains, new_mesh);
-
-            //outputs
-
             info.Add(_disps.ToString());
+            #endregion
+
+            #region outputs
 
             DA.SetData(0, res);
             DA.SetDataList(1, info);
 
+            #endregion
 
 
 
