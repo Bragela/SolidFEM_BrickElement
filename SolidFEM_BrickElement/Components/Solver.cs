@@ -30,8 +30,9 @@ namespace SolidFEM_BrickElement
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddGenericParameter("Elements", "E", "List of elements containg nodes and meshes to be calculated", GH_ParamAccess.list);
-            pManager.AddGenericParameter("Loads","L","External loads on the structure",GH_ParamAccess.list);
-            pManager.AddGenericParameter("Supports", "S", "Supports for the structure", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Loads","L","External loads on the model",GH_ParamAccess.list);
+            pManager.AddGenericParameter("Supports", "S", "Supports for the model", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Material", "M", "Material for the model", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -54,28 +55,17 @@ namespace SolidFEM_BrickElement
             List<ElementClass> elems = new List<ElementClass>();
             List<LoadClass> loads = new List<LoadClass>();
             List<SupportClass> sups = new List<SupportClass>();
+            MaterialClass material = new MaterialClass();
             DA.GetDataList(0, elems);
             DA.GetDataList(1, loads);
             DA.GetDataList(2, sups);
+            DA.GetData(3, ref material);
 
             List<string> info = new List<string>();
 
             //code
 
-            MaterialClass steel = new MaterialClass("Steel", 210000000, 0.3);
-
-            double val = 1.0 / Math.Sqrt(3);
-
-            Point3d pt_1 = new Point3d(val, val, val);
-            Point3d pt_2 = new Point3d(-val, val, val);
-            Point3d pt_3 = new Point3d(val, -val, val);
-            Point3d pt_4 = new Point3d(val, val, -val);
-            Point3d pt_5 = new Point3d(-val, -val, val);
-            Point3d pt_6 = new Point3d(val, -val, -val);
-            Point3d pt_7 = new Point3d(-val, val, -val);
-            Point3d pt_8 = new Point3d(-val, -val, -val);
-
-            List<Point3d> dummy_list = new List<Point3d> { pt_1, pt_2, pt_3, pt_4, pt_5, pt_6, pt_7, pt_8 };
+            List<Point3d> dummy_list = getDummyPoints();
 
             //Create a list of nodes with no duplicates
 
@@ -94,101 +84,18 @@ namespace SolidFEM_BrickElement
                 }
             }
 
-            //Create empty global stiffness matrix [nNodes*ndof,nNodes*ndof], and empty connectivity matrix
+            //Construct global stiffness matrix
             int nNodes = nodes.Count;
             int nDofs = 3;
 
-            Matrix<double> bigK = Matrix<double>.Build.Dense(nDofs * nNodes, nDofs * nNodes);
-
-            //Loop through all elements (elems.Count). Create connectivity matrix and local stiffness matrix, connect to global stiffness matrix
-
-            for(int i = 0; i < elems.Count; i++)
-            {
-                List<NodeClass> _nodes = elems[i].Nodes;
-
-                //Create connectivity matrix
-
-                Matrix<double> a_mat = Matrix<double>.Build.Dense(nDofs * _nodes.Count, bigK.ColumnCount);
-
-                for(int j = 0; j < _nodes.Count; j++)
-                {
-                    NodeClass node = _nodes[j];
-                    int gID = node.GlobalID;
-                    int lID = node.LocalID;
-
-                    int ID_1_1 = lID + _nodes.Count ;
-                    int ID_2_1 = lID + (_nodes.Count)*2;
-                    int ID_1_2 = gID + nNodes;
-                    int ID_2_2 = gID + nNodes*2;
-
-                    a_mat[lID, gID] = 1;
-                    a_mat[ID_1_1, ID_1_2] = 1;
-                    a_mat[ID_2_1, ID_2_2] = 1;
-                }
-
-                //Create stiffness matrix
-
-                Matrix<double> K = Matrix<double>.Build.Dense(24, 24);
-
-                for (int j = 0; j < 8; j++)
-                {
-                    var integrand = ConstructStiffnessMatrix(_nodes, steel, dummy_list[j]);
-                    Matrix<double> k = integrand.Item1;
-                    K += k;
-                }
-
-                bigK += a_mat.Transpose() * K * a_mat;
-            }
+            Matrix<double> bigK = ConstructGlobalStiffnessMatrix(elems, nDofs, nNodes, material);
+            info.Add(bigK.ToMatrixString());
 
             //Create list of supports and load vector
 
-            Matrix<double> loadVec = Matrix<double>.Build.Dense(nNodes * nDofs, 1);
-
-            Vector<double> _sups = Vector<double>.Build.Dense(nNodes * nDofs);
-
-            for (int i = 0; i < nNodes; i++)
-            {
-                //Create support list zeroing columns and rows in K
-                NodeClass node = nodes[i];
-                Point3d nodePt = node.Point;
-                int ID = node.GlobalID;
-                for (int j = 0; j < sups.Count; j++)
-                {
-                    SupportClass sup = sups[j];
-
-                    if (nodePt == sup.pt)
-                    {
-                        if (sup.Tx == true)
-                        {
-                            _sups[ID] = 1;
-                        }
-                        if (sup.Ty == true)
-                        {
-                            _sups[ID + nNodes] = 1;
-                        }
-                        if (sup.Tz == true)
-                        {
-                            _sups[ID + nNodes * 2] = 1;
-                        }
-                    }
-
-                }
-
-                //Create load vector
-
-                for(int j = 0; j < loads.Count; j++)
-                {
-                    LoadClass load = loads[j];
-
-                    if (nodePt == load.loadPoint)
-                    {
-                        loadVec[ID, 0] = load.loadVector.X;
-                        loadVec[ID + nNodes, 0] = load.loadVector.Y;
-                        loadVec[ID + nNodes * 2, 0] = load.loadVector.Z;
-                    }
-                }
-            }
-            info.Add(bigK.ToMatrixString());
+            var loadandsup = ConstructSupAndLoadVector(nodes, sups, loads, nDofs);
+            Vector<double> _sups = loadandsup.Item1;
+            Matrix<double> loadVec = loadandsup.Item2;
             
             //Set columns and rows of fixed nodes to 0
 
@@ -218,112 +125,15 @@ namespace SolidFEM_BrickElement
 
             Matrix<double> bigK_inv = bigK.Inverse(); 
             
-            //u = Kr
-
-            
+            //r = KR
 
             Matrix<double> r = bigK_inv.Multiply(loadVec);
 
-            info.Add(r.ToMatrixString());
+            //Create results with strains, stresses, displacements and new points
 
-            List<Matrix<double>> disp_list = new List<Matrix<double>>();
-            List<Matrix<double>> stress_list = new List<Matrix<double>>();
-            List<Matrix<double>> strain_list = new List<Matrix<double>>();
-            List<List<Point3d>> pts_list = new List<List<Point3d>>();
-
-            for (int i = 0; i < elems.Count; i++)
-            {
-                List<NodeClass> _nodes = elems[i].Nodes;
-
-                //Create connectivity matrix
-
-                Matrix<double> a_mat = Matrix<double>.Build.Dense(nDofs * _nodes.Count, bigK.ColumnCount);
-
-                a_mat.Clear();
-
-                for (int j = 0; j < _nodes.Count; j++)
-                {
-                    NodeClass node = _nodes[j];
-                    int gID = node.GlobalID;
-                    int lID = node.LocalID;
-
-                    a_mat[lID, gID] = 1;
-                    a_mat[lID + _nodes.Count, gID + nNodes] = 1;
-                    a_mat[lID + _nodes.Count * 2, gID + nNodes * 2] = 1;
-                }
-
-
-                Matrix<double> v = a_mat * r;
-
-                
-
-                //Convert displacements back to cartesian coordinates
-                Matrix<double> disp = Matrix<double>.Build.Dense(3, _nodes.Count);
-
-                for (int j = 0; j < _nodes.Count; j++)
-                {
-                    NodeClass node = _nodes[j];
-                    Point3d evalPt = getGenCoords(node.LocalID);
-
-                    Matrix<double> shapeFunc = GetShapeFunctions(_nodes.Count, evalPt.X, evalPt.Y, evalPt.Z);
-                    disp.SetSubMatrix(0, j, shapeFunc.Multiply(v));
-                }
-                
-                disp_list.Add(disp);
-                
-                //Calculate stresses and strains
-
-                Matrix<double> strains = Matrix<double>.Build.Dense(6, 8);
-                Matrix<double> stresses = Matrix<double>.Build.Dense(6, 8);
-
-                for (int j = 0; j < _nodes.Count; j++)
-                {
-                    var integrand = ConstructStiffnessMatrix(_nodes, steel, dummy_list[j]);
-
-                    Matrix<double> strain = integrand.Item2 * v;
-                    strains.SetSubMatrix(0, j, strain);
-
-                    Matrix<double> stress = integrand.Item3 * strain;
-                    stresses.SetSubMatrix(0, j, stress);
-                }
-
-                stress_list.Add(stresses);
-                strain_list.Add(strains);
-                
-
-                //Add displacements to nodes, to get new coordinates
-
-                List<NodeClass> dispNodes = _nodes;
-                List<Point3d> dispPts = new List<Point3d>();
-
-                for (int j = 0; j < _nodes.Count; j++)
-                {
-                    NodeClass node = dispNodes[j];
-                    Point3d pt = new Point3d(node.Point.X + disp[0, j], node.Point.Y + disp[1, j], node.Point.Z + disp[2, j]);
-                    dispPts.Add(pt);
-                }
-
-                pts_list.Add(dispPts);
-             }
-
-            info.Add(disp_list.ToString());
-
-            //Processing results
-
-            GH_Structure<GH_Number> _disps = ListMatrixToTreeNumber(disp_list);
-            GH_Structure<GH_Number> _stresses = ListMatrixToTreeNumber(stress_list);
-            GH_Structure<GH_Number> _strains = ListMatrixToTreeNumber(strain_list);
-            GH_Structure<GH_Point> _pts = ListListToTreePoint(pts_list);
-
-            //Create results
-            Mesh new_mesh = new Mesh();
-
-
-            ResultClass res = new ResultClass(_disps, _pts, _stresses, _strains, new_mesh);
+            ResultClass res = ConstructResults(elems, r, bigK, nodes, material, nDofs);
 
             //outputs
-
-            info.Add(_disps.ToString());
 
             DA.SetData(0, res);
             DA.SetDataList(1, info);
@@ -576,6 +386,226 @@ namespace SolidFEM_BrickElement
             }
 
             return tree;
+        }
+
+        private List<Point3d> getDummyPoints()
+        {
+            double val = 1.0 / Math.Sqrt(3);
+
+            Point3d pt_1 = new Point3d(val, val, val);
+            Point3d pt_2 = new Point3d(-val, val, val);
+            Point3d pt_3 = new Point3d(val, -val, val);
+            Point3d pt_4 = new Point3d(val, val, -val);
+            Point3d pt_5 = new Point3d(-val, -val, val);
+            Point3d pt_6 = new Point3d(val, -val, -val);
+            Point3d pt_7 = new Point3d(-val, val, -val);
+            Point3d pt_8 = new Point3d(-val, -val, -val);
+
+            List<Point3d> dummy_list = new List<Point3d> { pt_1, pt_2, pt_3, pt_4, pt_5, pt_6, pt_7, pt_8 };
+            return dummy_list;
+        }
+
+        private Matrix<double> ConstructGlobalStiffnessMatrix(List<ElementClass> elems, int nDofs, int nNodes, MaterialClass material)
+        {
+
+            Matrix<double> bigK = Matrix<double>.Build.Dense(nDofs * nNodes, nDofs * nNodes);
+            List<Point3d> dummy_list = getDummyPoints();
+
+            //Loop through all elements (elems.Count). Create connectivity matrix and local stiffness matrix, connect to global stiffness matrix
+
+            for (int i = 0; i < elems.Count; i++)
+            {
+                List<NodeClass> _nodes = elems[i].Nodes;
+
+                //Create connectivity matrix
+
+                Matrix<double> a_mat = Matrix<double>.Build.Dense(nDofs * _nodes.Count, bigK.ColumnCount);
+
+                for (int j = 0; j < _nodes.Count; j++)
+                {
+                    NodeClass node = _nodes[j];
+                    int gID = node.GlobalID;
+                    int lID = node.LocalID;
+
+                    int ID_1_1 = lID + _nodes.Count;
+                    int ID_2_1 = lID + (_nodes.Count) * 2;
+                    int ID_1_2 = gID + nNodes;
+                    int ID_2_2 = gID + nNodes * 2;
+
+                    a_mat[lID, gID] = 1;
+                    a_mat[ID_1_1, ID_1_2] = 1;
+                    a_mat[ID_2_1, ID_2_2] = 1;
+                }
+
+                //Create stiffness matrix
+
+                Matrix<double> K = Matrix<double>.Build.Dense(24, 24);
+
+                for (int j = 0; j < 8; j++)
+                {
+                    var integrand = ConstructStiffnessMatrix(_nodes, material, dummy_list[j]);
+                    Matrix<double> k = integrand.Item1;
+                    K += k;
+                }
+
+                bigK += a_mat.Transpose() * K * a_mat;
+            }
+
+            return bigK;
+        }
+
+        private (Vector<double>, Matrix<double>) ConstructSupAndLoadVector(List<NodeClass> nodes, List<SupportClass> sups, List<LoadClass> loads, int nDofs)
+        {
+
+            int nNodes = nodes.Count;
+
+            Matrix<double> loadVec = Matrix<double>.Build.Dense(nNodes * nDofs, 1);
+            Vector<double> _sups = Vector<double>.Build.Dense(nNodes * nDofs);
+
+            for (int i = 0; i < nNodes; i++)
+            {
+                //Create support list zeroing columns and rows in K
+                NodeClass node = nodes[i];
+                Point3d nodePt = node.Point;
+                int ID = node.GlobalID;
+                for (int j = 0; j < sups.Count; j++)
+                {
+                    SupportClass sup = sups[j];
+
+                    if (nodePt == sup.pt)
+                    {
+                        if (sup.Tx == true)
+                        {
+                            _sups[ID] = 1;
+                        }
+                        if (sup.Ty == true)
+                        {
+                            _sups[ID + nNodes] = 1;
+                        }
+                        if (sup.Tz == true)
+                        {
+                            _sups[ID + nNodes * 2] = 1;
+                        }
+                    }
+
+                }
+
+                //Create load vector
+
+                for (int j = 0; j < loads.Count; j++)
+                {
+                    LoadClass load = loads[j];
+
+                    if (nodePt == load.loadPoint)
+                    {
+                        loadVec[ID, 0] = load.loadVector.X;
+                        loadVec[ID + nNodes, 0] = load.loadVector.Y;
+                        loadVec[ID + nNodes * 2, 0] = load.loadVector.Z;
+                    }
+                }
+            }
+
+            return (_sups, loadVec);
+        }
+        
+        private ResultClass ConstructResults(List<ElementClass> elems, Matrix<double> r, Matrix<double> bigK, List<NodeClass> nodes, MaterialClass material, int nDofs)
+        {
+            List<Matrix<double>> disp_list = new List<Matrix<double>>();
+            List<Matrix<double>> stress_list = new List<Matrix<double>>();
+            List<Matrix<double>> strain_list = new List<Matrix<double>>();
+            List<List<Point3d>> pts_list = new List<List<Point3d>>();
+            int nNodes = nodes.Count;
+            List<Point3d> dummy_list = getDummyPoints();
+
+            for (int i = 0; i < elems.Count; i++)
+            {
+                List<NodeClass> _nodes = elems[i].Nodes;
+
+                //Create connectivity matrix
+
+                Matrix<double> a_mat = Matrix<double>.Build.Dense(nDofs * _nodes.Count, bigK.ColumnCount);
+
+                a_mat.Clear();
+
+                for (int j = 0; j < _nodes.Count; j++)
+                {
+                    NodeClass node = _nodes[j];
+                    int gID = node.GlobalID;
+                    int lID = node.LocalID;
+
+                    a_mat[lID, gID] = 1;
+                    a_mat[lID + _nodes.Count, gID + nNodes] = 1;
+                    a_mat[lID + _nodes.Count * 2, gID + nNodes * 2] = 1;
+                }
+
+
+                Matrix<double> v = a_mat * r;
+
+
+
+                //Convert displacements back to cartesian coordinates
+                Matrix<double> disp = Matrix<double>.Build.Dense(3, _nodes.Count);
+
+                for (int j = 0; j < _nodes.Count; j++)
+                {
+                    NodeClass node = _nodes[j];
+                    Point3d evalPt = getGenCoords(node.LocalID);
+
+                    Matrix<double> shapeFunc = GetShapeFunctions(_nodes.Count, evalPt.X, evalPt.Y, evalPt.Z);
+                    disp.SetSubMatrix(0, j, shapeFunc.Multiply(v));
+                }
+
+                disp_list.Add(disp);
+
+                //Calculate stresses and strains
+
+                Matrix<double> strains = Matrix<double>.Build.Dense(6, 8);
+                Matrix<double> stresses = Matrix<double>.Build.Dense(6, 8);
+
+                for (int j = 0; j < _nodes.Count; j++)
+                {
+                    var integrand = ConstructStiffnessMatrix(_nodes, material, dummy_list[j]);
+
+                    Matrix<double> strain = integrand.Item2 * v;
+                    strains.SetSubMatrix(0, j, strain);
+
+                    Matrix<double> stress = integrand.Item3 * strain;
+                    stresses.SetSubMatrix(0, j, stress);
+                }
+
+                stress_list.Add(stresses);
+                strain_list.Add(strains);
+
+
+                //Add displacements to nodes, to get new coordinates
+
+                List<NodeClass> dispNodes = _nodes;
+                List<Point3d> dispPts = new List<Point3d>();
+
+                for (int j = 0; j < _nodes.Count; j++)
+                {
+                    NodeClass node = dispNodes[j];
+                    Point3d pt = new Point3d(node.Point.X + disp[0, j], node.Point.Y + disp[1, j], node.Point.Z + disp[2, j]);
+                    dispPts.Add(pt);
+                }
+
+                pts_list.Add(dispPts);
+            }
+
+            //Processing results
+
+            GH_Structure<GH_Number> _disps = ListMatrixToTreeNumber(disp_list);
+            GH_Structure<GH_Number> _stresses = ListMatrixToTreeNumber(stress_list);
+            GH_Structure<GH_Number> _strains = ListMatrixToTreeNumber(strain_list);
+            GH_Structure<GH_Point> _pts = ListListToTreePoint(pts_list);
+
+            //Create results
+            Mesh new_mesh = new Mesh();
+
+
+            ResultClass res = new ResultClass(_disps, _pts, _stresses, _strains, new_mesh);
+
+            return res;
         }
 
         #endregion
