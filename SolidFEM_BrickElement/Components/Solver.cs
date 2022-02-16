@@ -62,7 +62,7 @@ namespace SolidFEM_BrickElement
 
             //code
 
-            MaterialClass steel = new MaterialClass("Steel", 210000, 0.3);
+            MaterialClass steel = new MaterialClass("Steel", 210000000, 0.3);
 
             double val = 1.0 / Math.Sqrt(3);
 
@@ -568,7 +568,7 @@ namespace SolidFEM_BrickElement
 
                 for (int j = 0; j < list[i].Count; j++) //Going through each column
                 {
-                    GH_Path path = new GH_Path(j, i);
+                    GH_Path path = new GH_Path(i);
                     GH_Point pt = new GH_Point();
                     GH_Convert.ToGHPoint(list[i][j], 0, ref pt);
                     tree.Append(pt, path);
