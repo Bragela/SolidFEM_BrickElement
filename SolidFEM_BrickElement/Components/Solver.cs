@@ -108,8 +108,6 @@ namespace SolidFEM_BrickElement
 
                 Matrix<double> a_mat = Matrix<double>.Build.Dense(nDofs * _nodes_.Count, bigK.ColumnCount);
 
-                a_mat.Clear();
-
                 for(int j = 0; j < _nodes_.Count; j++)
                 {
                     NodeClass node = _nodes_[j];
@@ -151,6 +149,7 @@ namespace SolidFEM_BrickElement
                 //Create support list zeroing columns and rows in K
                 NodeClass node = nodes[i];
                 Point3d nodePt = node.Point;
+                int ID = node.GlobalID;
                 for (int j = 0; j < sups.Count; j++)
                 {
                     SupportClass sup = sups[j];
@@ -159,15 +158,15 @@ namespace SolidFEM_BrickElement
                     {
                         if (sup.Tx == true)
                         {
-                            _sups[i] = 1;
+                            _sups[ID] = 1;
                         }
-                        else if (sup.Ty == true)
+                        if (sup.Ty == true)
                         {
-                            _sups[i + nNodes] = 1;
+                            _sups[ID + nNodes] = 1;
                         }
-                        else if (sup.Tz == true)
+                        if (sup.Tz == true)
                         {
-                            _sups[i + nNodes * 2] = 1;
+                            _sups[ID + nNodes * 2] = 1;
                         }
                     }
 
@@ -181,9 +180,9 @@ namespace SolidFEM_BrickElement
 
                     if (nodePt == load.loadPoint)
                     {
-                        loadVec[i, 0] = load.loadVector.X;
-                        loadVec[i + nNodes, 0] = load.loadVector.Y;
-                        loadVec[i + nNodes * 2, 0] = load.loadVector.Z;
+                        loadVec[ID, 0] = load.loadVector.X;
+                        loadVec[ID + nNodes, 0] = load.loadVector.Y;
+                        loadVec[ID + nNodes * 2, 0] = load.loadVector.Z;
                     }
                 }
             }
@@ -209,8 +208,8 @@ namespace SolidFEM_BrickElement
                 if (_sups[i] == 1)
                 {
                     bigK[i, i] = 1;
-                    bigK[i + nNodes, i + nNodes] = 1;
-                    bigK[i + nNodes * 2, i + nNodes * 2] = 1;
+                    bigK[i, i] = 1;
+                    bigK[i, i] = 1;
                 }
             }
 
