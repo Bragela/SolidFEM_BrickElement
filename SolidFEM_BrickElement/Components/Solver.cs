@@ -65,8 +65,6 @@ namespace SolidFEM_BrickElement
 
             //code
 
-            List<Point3d> dummy_list = getDummyPoints();
-
             //Create a list of nodes with no duplicates
 
             List<NodeClass> nodes = new List<NodeClass>();
@@ -97,7 +95,7 @@ namespace SolidFEM_BrickElement
             Vector<double> _sups = loadandsup.Item1;
             Matrix<double> loadVec = loadandsup.Item2;
             
-            //Set columns and rows of fixed nodes to 0
+            //Set columns and rows of fixed DOFS, set det diagonal for these fixed DOFS to 1, to make the matrix inversible
 
             for (int i = 0; i < _sups.Count; i++)
             {
@@ -106,19 +104,9 @@ namespace SolidFEM_BrickElement
                     bigK.ClearColumn(i);
                     bigK.ClearRow(i);
 
+                    bigK[i, i] = 1; 
+
                     loadVec.ClearRow(i);
-                }
-            }
-
-            //Add 1 on the diagonal for all fixed nodes to make it inverseable
-
-            for (int i = 0; i < _sups.Count; i++)
-            {
-                if (_sups[i] == 1)
-                {
-                    bigK[i, i] = 1;
-                    bigK[i, i] = 1;
-                    bigK[i, i] = 1;
                 }
             }
 

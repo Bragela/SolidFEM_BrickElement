@@ -44,7 +44,7 @@ namespace SolidFEM_BrickElement
         {
             //inputs
             string Name = ("Name");
-            int eModulus = 200000;
+            double eModulus = 200000;
             double pRatio = 0.3;
 
             DA.GetData(0, ref Name);
