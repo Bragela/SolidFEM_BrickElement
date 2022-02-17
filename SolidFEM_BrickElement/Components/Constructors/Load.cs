@@ -23,7 +23,7 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddVectorParameter("Vector", "V", "Vector containing forces in X, Y and Z direction", GH_ParamAccess.item);
+            pManager.AddVectorParameter("Vector", "V", "Vector containing forces in X, Y and Z direction [kN]", GH_ParamAccess.item);
             pManager.AddPointParameter("Point","P","The point where the load is applied",GH_ParamAccess.item);
         }
 

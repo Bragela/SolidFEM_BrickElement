@@ -29,7 +29,7 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Elements", "E", "List of elements containg nodes and meshes to be calculated", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Elements", "E", "List of elements containg nodes and meshes to be calculated (lengths in [m])", GH_ParamAccess.list);
             pManager.AddGenericParameter("Loads","L","External loads on the model",GH_ParamAccess.list);
             pManager.AddGenericParameter("Supports", "S", "Supports for the model", GH_ParamAccess.list);
             pManager.AddGenericParameter("Material", "M", "Material for the model", GH_ParamAccess.item);

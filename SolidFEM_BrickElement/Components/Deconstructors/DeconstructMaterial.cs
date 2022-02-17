@@ -32,7 +32,7 @@ namespace SolidFEM_BrickElement.Components.Deconstructors
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             pManager.AddTextParameter("Name", "N", "Material name", GH_ParamAccess.item);
-            pManager.AddNumberParameter("Youngs Modulus", "E", "The materials youngs modulus", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Youngs Modulus", "E", "The materials youngs modulus [MPa / N/mm^2]", GH_ParamAccess.item);
             pManager.AddNumberParameter("Poissons ratio", "v", "The materials poissons ratio", GH_ParamAccess.item);
         }
 
