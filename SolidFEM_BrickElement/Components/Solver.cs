@@ -501,7 +501,8 @@ namespace SolidFEM_BrickElement
             List<Matrix<double>> disp_list = new List<Matrix<double>>();
             List<Matrix<double>> stress_list = new List<Matrix<double>>();
             List<Matrix<double>> strain_list = new List<Matrix<double>>();
-            List<List<Point3d>> pts_list = new List<List<Point3d>>();
+            List<List<Point3d>> new_pts_list = new List<List<Point3d>>();
+            List<List<Point3d>> old_pts_list = new List<List<Point3d>>();
             int nNodes = nodes.Count;
             List<Point3d> dummy_list = getDummyPoints();
 
@@ -569,15 +570,18 @@ namespace SolidFEM_BrickElement
 
                 List<NodeClass> dispNodes = _nodes;
                 List<Point3d> dispPts = new List<Point3d>();
+                List<Point3d> oldPts = new List<Point3d>();
 
                 for (int j = 0; j < _nodes.Count; j++)
                 {
                     NodeClass node = dispNodes[j];
                     Point3d pt = new Point3d(node.Point.X + disp[0, j], node.Point.Y + disp[1, j], node.Point.Z + disp[2, j]);
                     dispPts.Add(pt);
+                    oldPts.Add(_nodes[j].Point);
                 }
 
-                pts_list.Add(dispPts);
+                new_pts_list.Add(dispPts);
+                old_pts_list.Add(oldPts);
             }
 
             //Processing results
@@ -585,13 +589,14 @@ namespace SolidFEM_BrickElement
             GH_Structure<GH_Number> _disps = ListMatrixToTreeNumber(disp_list);
             GH_Structure<GH_Number> _stresses = ListMatrixToTreeNumber(stress_list);
             GH_Structure<GH_Number> _strains = ListMatrixToTreeNumber(strain_list);
-            GH_Structure<GH_Point> _pts = ListListToTreePoint(pts_list);
+            GH_Structure<GH_Point> _npts = ListListToTreePoint(new_pts_list);
+            GH_Structure<GH_Point> _opts = ListListToTreePoint(new_pts_list);
 
             //Create results
             Mesh new_mesh = new Mesh();
 
 
-            ResultClass res = new ResultClass(_disps, _pts, _stresses, _strains, new_mesh);
+            ResultClass res = new ResultClass(_disps, _stresses, _strains, _npts, _opts, new_mesh);
 
             return res;
         }

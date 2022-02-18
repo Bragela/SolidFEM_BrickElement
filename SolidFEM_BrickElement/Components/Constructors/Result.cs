@@ -26,10 +26,12 @@ namespace SolidFEM_BrickElement
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddNumberParameter("Displacements", "D", "List of displacements", GH_ParamAccess.tree);
-            pManager.AddPointParameter("Points", "P", "List of new points", GH_ParamAccess.tree);
             pManager.AddNumberParameter("Stresses", "s", "List of stresses", GH_ParamAccess.tree);
             pManager.AddNumberParameter("Strains", "e", "List of strains", GH_ParamAccess.tree);
+            pManager.AddPointParameter("Points", "P", "List of new points", GH_ParamAccess.tree);
+            pManager.AddPointParameter("Points", "P", "List of old points", GH_ParamAccess.tree);
             pManager.AddMeshParameter("Mesh", "M", "Deformed mesh", GH_ParamAccess.item);
+            
         }
 
         /// <summary>
@@ -50,19 +52,21 @@ namespace SolidFEM_BrickElement
             GH_Structure<GH_Number> disp = new GH_Structure<GH_Number>();
             GH_Structure<GH_Number> stresses = new GH_Structure<GH_Number>();
             GH_Structure<GH_Number> strains = new GH_Structure<GH_Number>();
-            GH_Structure<GH_Point> pts = new GH_Structure<GH_Point>();
+            GH_Structure<GH_Point> new_pts = new GH_Structure<GH_Point>();
+            GH_Structure<GH_Point> old_pts = new GH_Structure<GH_Point>();
 
             Mesh mesh = new Mesh();
 
             DA.GetDataTree(0, out disp);
-            DA.GetDataTree(1, out pts);
-            DA.GetDataTree(2, out stresses);
-            DA.GetDataTree(3, out strains);
-            DA.GetData(4, ref mesh);
+            DA.GetDataTree(1, out stresses);
+            DA.GetDataTree(2, out strains);
+            DA.GetDataTree(3, out new_pts);
+            DA.GetDataTree(4, out old_pts);
+            DA.GetData(5, ref mesh);
 
             //code
 
-            ResultClass res = new ResultClass(disp, pts, stresses, strains, mesh);
+            ResultClass res = new ResultClass(disp, stresses, strains, new_pts, old_pts, mesh);
 
             //outputs
             DA.SetData(0, res);
