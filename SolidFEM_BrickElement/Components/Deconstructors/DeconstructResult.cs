@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Data;
+using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
 
 namespace SolidFEM_BrickElement
@@ -31,10 +33,10 @@ namespace SolidFEM_BrickElement
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddNumberParameter("Displacements", "D", "List of displacements", GH_ParamAccess.tree);
+            pManager.AddNumberParameter("Displacements", "D", "List of displacements [mm]", GH_ParamAccess.tree);
             pManager.AddPointParameter("Points","P","List of new points",GH_ParamAccess.tree);
-            pManager.AddNumberParameter("Stresses", "s", "List of stresses", GH_ParamAccess.tree);
-            pManager.AddNumberParameter("Strains", "e", "List of strains", GH_ParamAccess.tree);
+            pManager.AddNumberParameter("Stresses", "s", "List of stresses [N/mm^2]", GH_ParamAccess.tree);
+            pManager.AddNumberParameter("Strains", "e", "List of strains [N/mm^2]", GH_ParamAccess.tree);
             pManager.AddMeshParameter("Mesh", "M", "Deformed mesh", GH_ParamAccess.item);
         }
 

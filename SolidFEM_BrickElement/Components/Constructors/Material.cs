@@ -24,7 +24,7 @@ namespace SolidFEM_BrickElement
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
             pManager.AddTextParameter("Name","N","Name of material",GH_ParamAccess.item);
-            pManager.AddNumberParameter("Youngs Modulus", "E", "", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Youngs Modulus [N/mm^2]", "E", "", GH_ParamAccess.item);
             pManager.AddNumberParameter("Poissions ratio", "v", "", GH_ParamAccess.item);
         }
 
@@ -53,7 +53,7 @@ namespace SolidFEM_BrickElement
 
             //code
 
-            MaterialClass material = new MaterialClass(Name, eModulus, pRatio);
+            MaterialClass material = new MaterialClass(Name, eModulus*1000, pRatio);
 
             //outputs
 
