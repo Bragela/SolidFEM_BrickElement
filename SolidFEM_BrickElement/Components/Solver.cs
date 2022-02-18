@@ -590,7 +590,7 @@ namespace SolidFEM_BrickElement
             GH_Structure<GH_Number> _stresses = ListMatrixToTreeNumber(stress_list);
             GH_Structure<GH_Number> _strains = ListMatrixToTreeNumber(strain_list);
             GH_Structure<GH_Point> _npts = ListListToTreePoint(new_pts_list);
-            GH_Structure<GH_Point> _opts = ListListToTreePoint(new_pts_list);
+            GH_Structure<GH_Point> _opts = ListListToTreePoint(old_pts_list);
 
             //Create results
             Mesh new_mesh = new Mesh();
