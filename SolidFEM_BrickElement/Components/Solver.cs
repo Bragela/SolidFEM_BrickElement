@@ -558,7 +558,7 @@ namespace SolidFEM_BrickElement
                     NodeClass node = _nodes[j];
                     Point3d evalPt = getGenCoords(node.LocalID);
 
-                    Matrix<double> shapeFunc = GetShapeFunctions(_nodes.Count, evalPt.X, evalPt.Y, evalPt.Z);
+                    Matrix<double> shapeFunc = GetShapeFunctions(_nodes.Count, evalPt.X*Math.Sqrt(3), evalPt.Y * Math.Sqrt(3), evalPt.Z * Math.Sqrt(3));
 
                     Matrix<double> gauss_strain = integrand.Item2 * v;
                     Matrix<double> strain = shapeFunc * gauss_strain;
