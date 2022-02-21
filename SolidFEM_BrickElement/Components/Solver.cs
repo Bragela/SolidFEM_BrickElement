@@ -367,9 +367,9 @@ namespace SolidFEM_BrickElement
                 for (int j = 0; j < list[i].Count; j++) //Going through each column
                 {
                     GH_Path path = new GH_Path(i);
-                    GH_Point pt = new GH_Point();
-                    GH_Convert.ToGHPoint(list[i][j], 0, ref pt);
-                    tree.Append(pt, path);
+                    GH_Point _pt = new GH_Point();
+                    GH_Convert.ToGHPoint(list[i][j], 0, ref _pt);
+                    tree.Append(_pt, path);
                 }
             }
 
@@ -555,10 +555,17 @@ namespace SolidFEM_BrickElement
                 {
                     var integrand = ConstructStiffnessMatrix(_nodes, material, dummy_list[j]);
 
-                    Matrix<double> strain = integrand.Item2 * v;
+                    NodeClass node = _nodes[j];
+                    Point3d evalPt = getGenCoords(node.LocalID);
+
+                    Matrix<double> shapeFunc = GetShapeFunctions(_nodes.Count, evalPt.X, evalPt.Y, evalPt.Z);
+
+                    Matrix<double> gauss_strain = integrand.Item2 * v;
+                    Matrix<double> strain = shapeFunc * gauss_strain;
                     strains.SetSubMatrix(0, j, strain);
 
-                    Matrix<double> stress = integrand.Item3 * strain;
+                    Matrix<double> gauss_stress = integrand.Item3 * strain;
+                    Matrix<double> stress = shapeFunc * gauss_stress;
                     stresses.SetSubMatrix(0, j, stress);
                 }
 
@@ -575,8 +582,8 @@ namespace SolidFEM_BrickElement
                 for (int j = 0; j < _nodes.Count; j++)
                 {
                     NodeClass node = dispNodes[j];
-                    Point3d pt = new Point3d(node.Point.X + disp[0, j], node.Point.Y + disp[1, j], node.Point.Z + disp[2, j]);
-                    dispPts.Add(pt);
+                    Point3d _pt = new Point3d(node.Point.X + disp[0, j], node.Point.Y + disp[1, j], node.Point.Z + disp[2, j]);
+                    dispPts.Add(_pt);
                     oldPts.Add(_nodes[j].Point);
                 }
 
@@ -591,6 +598,14 @@ namespace SolidFEM_BrickElement
             GH_Structure<GH_Number> _strains = ListMatrixToTreeNumber(strain_list);
             GH_Structure<GH_Point> _npts = ListListToTreePoint(new_pts_list);
             GH_Structure<GH_Point> _opts = ListListToTreePoint(old_pts_list);
+
+            Vector3d vec = new Vector3d(1, 0, 0);
+            
+
+            Point3d pt = new Point3d(0, 0, 0);
+            var dir = Transform.Translation(vec);
+            pt.Transform(dir);
+             
 
             //Create results
             Mesh new_mesh = new Mesh();
