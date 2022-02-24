@@ -188,6 +188,22 @@ namespace SolidFEM_BrickElement
 
         private Matrix<double> GetShapeFunctions(int nrNodes, double xi, double eta, double zeta) //Input number of nodes and the generalized point to be evaluated, and get the corresponding shape functions
         {
+            Matrix<double> N = Matrix<double>.Build.Dense(1, nrNodes);
+
+            //Construct the N0 vector with shape functions for the eight nodes
+            for (int i = 0; i < nrNodes; i++)
+            {
+                Point3d genCoord = getGenCoords(i);
+
+                double x = (1.0 / 8.0) * (1 + (genCoord.X * xi)) * (1 + (genCoord.Y * eta)) * (1 + (genCoord.Z * zeta));
+                N[0, i] = x;
+            }
+
+            return N;
+        }
+
+        private Matrix<double> GetShapeFunctionMatrix(int nrNodes, double xi, double eta, double zeta)
+        {
             Vector<double> N = Vector<double>.Build.Dense(nrNodes);
 
             //Construct the N0 vector with shape functions for the eight nodes
@@ -540,7 +556,7 @@ namespace SolidFEM_BrickElement
                     NodeClass node = _nodes[j];
                     Point3d evalPt = getGenCoords(node.LocalID);
 
-                    Matrix<double> shapeFunc = GetShapeFunctions(_nodes.Count, evalPt.X, evalPt.Y, evalPt.Z);
+                    Matrix<double> shapeFunc = GetShapeFunctionMatrix(_nodes.Count, evalPt.X, evalPt.Y, evalPt.Z);
                     disp.SetSubMatrix(0, j, shapeFunc.Multiply(v));
                 }
 
@@ -548,29 +564,36 @@ namespace SolidFEM_BrickElement
 
                 //Calculate stresses and strains
 
-                Matrix<double> strains = Matrix<double>.Build.Dense(6, 8);
-                Matrix<double> stresses = Matrix<double>.Build.Dense(6, 8);
+                Matrix<double> gauss_strains = Matrix<double>.Build.Dense(6, 8);
+                Matrix<double> gauss_stresses = Matrix<double>.Build.Dense(6, 8);
 
                 for (int j = 0; j < _nodes.Count; j++)
                 {
                     var integrand = ConstructStiffnessMatrix(_nodes, material, dummy_list[j]);
 
-                    NodeClass node = _nodes[j];
-                    Point3d evalPt = getGenCoords(node.LocalID);
-
-                    Matrix<double> shapeFunc = GetShapeFunctions(_nodes.Count, evalPt.X*Math.Sqrt(3), evalPt.Y * Math.Sqrt(3), evalPt.Z * Math.Sqrt(3));
-
                     Matrix<double> gauss_strain = integrand.Item2 * v;
-                    Matrix<double> strain = shapeFunc * gauss_strain;
-                    strains.SetSubMatrix(0, j, strain);
-
-                    Matrix<double> gauss_stress = integrand.Item3 * strain;
-                    Matrix<double> stress = shapeFunc * gauss_stress;
-                    stresses.SetSubMatrix(0, j, stress);
+                    Matrix<double> gauss_stress = integrand.Item3 * gauss_strain;
+                    gauss_stresses.SetSubMatrix(0, j, gauss_stress);
+                    gauss_strains.SetSubMatrix(0, j, gauss_strain);
                 }
 
-                stress_list.Add(stresses);
-                strain_list.Add(strains);
+                Matrix<double> elem_strains = Matrix<double>.Build.Dense(6, 8);
+                Matrix<double> elem_stresses = Matrix<double>.Build.Dense(6, 8);
+
+                for (int j = 0; j < _nodes.Count; j++)
+                {
+                    Point3d genCoord = getGenCoords(j);
+                    Matrix<double> shapeFunc = GetShapeFunctions(8, genCoord.X * Math.Sqrt(3), genCoord.Y * Math.Sqrt(3), genCoord.Z * Math.Sqrt(3));
+
+                    Matrix<double> nodalStrain = gauss_strains.Multiply(shapeFunc.Transpose());
+                    Matrix<double> nodalStress = gauss_stresses.Multiply(shapeFunc.Transpose());
+
+                    elem_strains.SetSubMatrix(0, j, nodalStrain.SubMatrix(0, 6, 0, 1));
+                    elem_stresses.SetSubMatrix(0, j, nodalStress.SubMatrix(0, 6, 0, 1));
+                }
+
+                strain_list.Add(elem_strains);
+                stress_list.Add(elem_stresses);
 
 
                 //Add displacements to nodes, to get new coordinates
@@ -597,7 +620,6 @@ namespace SolidFEM_BrickElement
             GH_Structure<GH_Number> _stresses = ListMatrixToTreeNumber(stress_list);
             GH_Structure<GH_Number> _strains = ListMatrixToTreeNumber(strain_list);
             GH_Structure<GH_Point> _npts = ListListToTreePoint(new_pts_list);
-            GH_Structure<GH_Point> _opts = ListListToTreePoint(old_pts_list);
 
             Vector3d vec = new Vector3d(1, 0, 0);
             
@@ -611,7 +633,7 @@ namespace SolidFEM_BrickElement
             Mesh new_mesh = new Mesh();
 
 
-            ResultClass res = new ResultClass(_disps, _stresses, _strains, _npts, _opts, new_mesh);
+            ResultClass res = new ResultClass(_disps, _stresses, _strains, _npts, new_mesh);
 
             return res;
         }
