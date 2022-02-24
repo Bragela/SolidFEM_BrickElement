@@ -29,6 +29,7 @@ namespace SolidFEM_BrickElement.Components
         {
             pManager.AddPointParameter("Displ Points", "DPs", "Displacement points", GH_ParamAccess.tree);
             pManager.AddNumberParameter("Stress", "Str", "Stress", GH_ParamAccess.tree);
+            pManager.AddNumberParameter("Stress direction","D","Direction of stress to preview",GH_ParamAccess.tree);  
         }
 
         /// <summary>
@@ -38,6 +39,7 @@ namespace SolidFEM_BrickElement.Components
         {
             pManager.AddMeshParameter("Stress mesh", "Stress mesh", "Colored mesh by stress values", GH_ParamAccess.list);
             pManager.AddNumberParameter("TestNumber", "NT", "Numbertest", GH_ParamAccess.list);
+            pManager.AddTextParameter("","","",GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -50,14 +52,17 @@ namespace SolidFEM_BrickElement.Components
 
             GH_Structure<GH_Point> gh_nodes = new GH_Structure<GH_Point>();
             GH_Structure<GH_Number> gh_stresses = new GH_Structure<GH_Number>();
+            int num = 0;
 
             if (!DA.GetDataTree(0, out gh_nodes)) return;
             if (!DA.GetDataTree(1, out gh_stresses)) return;
+            DA.GetData(2, ref num);
 
 
 
 
 
+            List<string> info = new List<string>();
 
 
             //Make the input as list in list
@@ -127,9 +132,9 @@ namespace SolidFEM_BrickElement.Components
                             stress_yz.Add(stresses[i][4]);
                             stress_zx.Add(stresses[i][5]);
 
-                double str_mises = (1/Math.Sqrt(2))*(Math.Pow(Math.Pow(stresses[i][0] - stresses[i][1], 2) + Math.Pow(stresses[i][1] - stresses[i][2], 2)
-                                           + Math.Pow(stresses[i][2] - stresses[i][0], 2) 
-                                           + 6*(Math.Pow(stresses[i][3],2) + Math.Pow(stresses[i][4], 2) + Math.Pow(stresses[i][5], 2)),0.5));
+                double str_mises = (Math.Pow(0.5*(Math.Pow(stresses[i][0] - stresses[i][1], 2) + Math.Pow(stresses[i][1] - stresses[i][2], 2)
+                                           + Math.Pow(stresses[i][2] - stresses[i][0], 2)) 
+                                           + 3*(Math.Pow(stresses[i][3],2) + Math.Pow(stresses[i][4], 2) + Math.Pow(stresses[i][5], 2)),0.5));
                         
                             stress_Mises.Add(str_mises);
                         }
@@ -147,12 +152,15 @@ namespace SolidFEM_BrickElement.Components
 
             // Set direction (dir) -> x = 0, y = 1, z = 2 , xy = 3, yz = 4, zx = 5, Mises = 6
 
-            int dir = 6;
+            int dir = num;
 
             double stress_max = stress_dir[dir].Max();
             double stress_min = stress_dir[dir].Min();
-            double stress_range = stress_max - stress_min;  
+            double stress_range = stress_max - stress_min;
 
+            info.Add(stress_max.ToString());
+            info.Add(stress_min.ToString());
+            info.Add(stress_Mises.ToString());
        
 
             //Constructing mesh from displacement points and giving color from stress values
@@ -210,8 +218,8 @@ namespace SolidFEM_BrickElement.Components
                 double str_dir_pos = str_dir_avg + Math.Abs(stress_min);
                 double str_dir_rgb = (str_dir_pos / stress_range) * 255;
 
-                int red_val = 255 - ((int)str_dir_rgb);
-                int green_val = ((int)str_dir_rgb);
+                int red_val = ((int)str_dir_rgb);
+                int green_val = 255 - ((int)str_dir_rgb);
 
 
 
@@ -239,6 +247,7 @@ namespace SolidFEM_BrickElement.Components
             
             DA.SetDataList(0, meshes);
             DA.SetDataList(1, percents);
+            DA.SetDataList(2, info);
 
         }
 

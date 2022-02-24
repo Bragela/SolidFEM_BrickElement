@@ -17,8 +17,7 @@ namespace SolidFEM_BrickElement
         public GH_Structure<GH_Number> displacements;
         public GH_Structure<GH_Number> stresses;
         public GH_Structure<GH_Number> strains;
-        public GH_Structure<GH_Point> new_pts;
-        public GH_Structure<GH_Point> old_pts;
+        public GH_Structure<GH_Point> disp_pts;
         public Mesh mesh;
 
         //Constructors
@@ -27,13 +26,12 @@ namespace SolidFEM_BrickElement
 
         }
 
-        public ResultClass(GH_Structure<GH_Number> _disp, GH_Structure<GH_Number> _stresses, GH_Structure<GH_Number> _strains, GH_Structure<GH_Point> _npts, GH_Structure<GH_Point> _opts, Mesh _mesh)
+        public ResultClass(GH_Structure<GH_Number> _disp, GH_Structure<GH_Number> _stresses, GH_Structure<GH_Number> _strains, GH_Structure<GH_Point> _npts, Mesh _mesh)
         {
             displacements = _disp;
             stresses = _stresses;
             strains = _strains;
-            new_pts = _npts;
-            old_pts = _opts;
+            disp_pts = _npts;
             mesh = _mesh;
             
         }

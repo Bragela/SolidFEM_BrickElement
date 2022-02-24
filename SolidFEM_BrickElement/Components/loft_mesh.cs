@@ -90,10 +90,11 @@ namespace SolidFEM_BrickElement
 
             Boolean check = false;
 
-            if(normalBaseSurf.Z > 0 && normalTopSurf.Z < 0 || normalBaseSurf.Z < 0 && normalTopSurf.Z > 0)
+            if(normalBaseSurf.Z > 0 && normalTopSurf.Z < 0 || normalBaseSurf.Z < 0 && normalTopSurf.Z > 0|| normalBaseSurf.X > 0 && normalTopSurf.X < 0 || normalBaseSurf.X < 0 && normalTopSurf.X > 0|| normalBaseSurf.Y > 0 && normalTopSurf.Y < 0 || normalBaseSurf.Y < 0 && normalTopSurf.Y > 0)
             {
                 check = true;
             }
+
 
             List<Curve> allCrvs = new List<Curve>();
             
