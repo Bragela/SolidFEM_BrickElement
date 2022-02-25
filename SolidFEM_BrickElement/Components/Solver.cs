@@ -396,16 +396,28 @@ namespace SolidFEM_BrickElement
         {
             double val = 1.0 / Math.Sqrt(3);
 
-            Point3d pt_1 = new Point3d(val, val, val);
-            Point3d pt_2 = new Point3d(-val, val, val);
-            Point3d pt_3 = new Point3d(val, -val, val);
-            Point3d pt_4 = new Point3d(val, val, -val);
+            //Point3d pt_1 = new Point3d(val, val, val);
+            //Point3d pt_2 = new Point3d(-val, val, val);
+            //Point3d pt_3 = new Point3d(val, -val, val);
+            //Point3d pt_4 = new Point3d(val, val, -val);
+            //Point3d pt_5 = new Point3d(-val, -val, val);
+            //Point3d pt_6 = new Point3d(val, -val, -val);
+            //Point3d pt_7 = new Point3d(-val, val, -val);
+            //Point3d pt_8 = new Point3d(-val, -val, -val);
+
+
+            Point3d pt_1 = new Point3d(-val, -val, -val);
+            Point3d pt_2 = new Point3d(val, -val, -val);
+            Point3d pt_3 = new Point3d(val, val, -val);
+            Point3d pt_4 = new Point3d(-val, val, -val);
             Point3d pt_5 = new Point3d(-val, -val, val);
-            Point3d pt_6 = new Point3d(val, -val, -val);
-            Point3d pt_7 = new Point3d(-val, val, -val);
-            Point3d pt_8 = new Point3d(-val, -val, -val);
+            Point3d pt_6 = new Point3d(val, -val, val);
+            Point3d pt_7 = new Point3d(val, val, val);
+            Point3d pt_8 = new Point3d(-val, val, val);
 
             List<Point3d> dummy_list = new List<Point3d> { pt_1, pt_2, pt_3, pt_4, pt_5, pt_6, pt_7, pt_8 };
+            Point3d ptOrig = new Point3d(0, 0, 0);
+            List<Point3d> dummy_list1 = new List<Point3d> { ptOrig };
             return dummy_list;
         }
 
@@ -445,7 +457,7 @@ namespace SolidFEM_BrickElement
 
                 Matrix<double> K = Matrix<double>.Build.Dense(24, 24);
 
-                for (int j = 0; j < 8; j++)
+                for (int j = 0; j < dummy_list.Count; j++)
                 {
                     var integrand = ConstructStiffnessMatrix(_nodes, material, dummy_list[j]);
                     Matrix<double> k = integrand.Item1;
@@ -564,37 +576,98 @@ namespace SolidFEM_BrickElement
 
                 //Calculate stresses and strains
 
-                Matrix<double> gauss_strains = Matrix<double>.Build.Dense(6, 8);
-                Matrix<double> gauss_stresses = Matrix<double>.Build.Dense(6, 8);
+                // (1x1x1) sampling pt ------------------------------------------------------------------------------------------------------------- alternative 1
 
-                for (int j = 0; j < _nodes.Count; j++)
-                {
-                    var integrand = ConstructStiffnessMatrix(_nodes, material, dummy_list[j]);
+                Point3d stressSamplingPt = new Point3d(0, 0, 0);
 
-                    Matrix<double> gauss_strain = integrand.Item2 * v;
-                    Matrix<double> gauss_stress = integrand.Item3 * gauss_strain;
-                    gauss_stresses.SetSubMatrix(0, j, gauss_stress);
-                    gauss_strains.SetSubMatrix(0, j, gauss_strain);
-                }
+                var integrand1 = ConstructStiffnessMatrix(_nodes, material, stressSamplingPt);
+                Matrix<double> B = integrand1.Item2;
+                Matrix<double> C = integrand1.Item3;
 
-                Matrix<double> elem_strains = Matrix<double>.Build.Dense(6, 8);
-                Matrix<double> elem_stresses = Matrix<double>.Build.Dense(6, 8);
+                Matrix<double> strainAtSamplingPt = B * v;
+                Matrix<double> stressAtSamplingPt = C * strainAtSamplingPt;
 
-                for (int j = 0; j < _nodes.Count; j++)
-                {
-                    Point3d genCoord = getGenCoords(j);
-                    Matrix<double> shapeFunc = GetShapeFunctions(8, genCoord.X * Math.Sqrt(3), genCoord.Y * Math.Sqrt(3), genCoord.Z * Math.Sqrt(3));
+                Matrix<double> strainAtNodes = strainAtSamplingPt;
+                Matrix<double> stressAtNodes = stressAtSamplingPt;
 
-                    Matrix<double> nodalStrain = gauss_strains.Multiply(shapeFunc.Transpose());
-                    Matrix<double> nodalStress = gauss_stresses.Multiply(shapeFunc.Transpose());
+                strain_list.Add(strainAtNodes);
+                stress_list.Add(stressAtNodes);
 
-                    elem_strains.SetSubMatrix(0, j, nodalStrain.SubMatrix(0, 6, 0, 1));
-                    elem_stresses.SetSubMatrix(0, j, nodalStress.SubMatrix(0, 6, 0, 1));
-                }
+                // (2x2x2) samplingpoints ----------------------------------------------------------------------------------------------------------- alternative 2
 
-                strain_list.Add(elem_strains);
-                stress_list.Add(elem_stresses);
 
+                //Matrix<double> strainAtSamplingPoints = Matrix<double>.Build.Dense(6, 8);
+                //Matrix<double> stressAtSamplingPoints = Matrix<double>.Build.Dense(6, 8);
+
+                //for (int j = 0; j < 8; j++)
+                //{
+                //    var integrand1 = ConstructStiffnessMatrix(_nodes, material, dummy_list[j]);
+                //    Matrix<double> B = integrand1.Item2;
+                //    Matrix<double> C = integrand1.Item3;
+                //    Matrix<double> strainAtSamplingPt = B * v;
+                //    Matrix<double> stressAtSamplingPt = C * strainAtSamplingPt;
+
+                //    strainAtSamplingPoints.SetSubMatrix(0, j, strainAtSamplingPt);
+                //    stressAtSamplingPoints.SetSubMatrix(0, j, stressAtSamplingPt);
+                //}
+
+                //Matrix<double> strainAtNodes = Matrix<double>.Build.Dense(6, 8);
+                //Matrix<double> stressAtNodes = Matrix<double>.Build.Dense(6, 8);
+
+
+                //for (int k = 0; k < 8; k++)
+                //{
+                //    Point3d genCoord = getGenCoords(k);
+                //    Matrix<double> shapeFunc = GetShapeFunctions(8, genCoord.X * Math.Sqrt(3), genCoord.Y * Math.Sqrt(3), genCoord.Z * Math.Sqrt(3));
+                //    Matrix<double> strainAtNode = shapeFunc.Multiply(strainAtSamplingPoints.Transpose());
+                //    Matrix<double> strainAtNodeT = strainAtNode.Transpose();
+                //    Matrix<double> stressAtNode = shapeFunc.Multiply(stressAtSamplingPoints.Transpose());
+                //    Matrix<double> stressAtNodeT = stressAtNode.Transpose();
+
+                //    strainAtNodes.SetSubMatrix(0, k, strainAtNodeT);
+                //    stressAtNodes.SetSubMatrix(0, k, stressAtNodeT);
+
+                //}
+
+
+
+                //strain_list.Add(strainAtNodes);
+                //stress_list.Add(stressAtNodes);
+
+                //-------------------------------------------------------------------------------------------------------------------------------------- old code
+
+
+                ////Matrix<double> gauss_strains = Matrix<double>.Build.Dense(6, 8);
+                ////Matrix<double> gauss_stresses = Matrix<double>.Build.Dense(6, 8);
+
+                ////for (int j = 0; j < _nodes.Count; j++)
+                ////{
+                ////    var integrand = ConstructStiffnessMatrix(_nodes, material, dummy_list[j]);
+
+                ////    Matrix<double> gauss_strain = integrand.Item2 * v;
+                ////    Matrix<double> gauss_stress = integrand.Item3 * gauss_strain;
+                ////    gauss_stresses.SetSubMatrix(0, j, gauss_stress);
+                ////    gauss_strains.SetSubMatrix(0, j, gauss_strain);
+                ////}
+
+                ////Matrix<double> elem_strains = Matrix<double>.Build.Dense(6, 8);
+                ////Matrix<double> elem_stresses = Matrix<double>.Build.Dense(6, 8);
+
+                ////for (int j = 0; j < _nodes.Count; j++)
+                ////{
+                ////    Point3d genCoord = getGenCoords(j);
+                ////    Matrix<double> shapeFunc = GetShapeFunctions(8, genCoord.X * Math.Sqrt(3), genCoord.Y * Math.Sqrt(3), genCoord.Z * Math.Sqrt(3));
+
+                ////    Matrix<double> nodalStrain = gauss_strains.Multiply(shapeFunc.Transpose());
+                ////    Matrix<double> nodalStress = gauss_stresses.Multiply(shapeFunc.Transpose());
+
+                ////    elem_strains.SetSubMatrix(0, j, nodalStrain.SubMatrix(0, 6, 0, 1));
+                ////    elem_stresses.SetSubMatrix(0, j, nodalStress.SubMatrix(0, 6, 0, 1));
+                ////}
+
+                ////strain_list.Add(elem_strains);
+                ////stress_list.Add(elem_stresses);
+                // ----------------------------------------------------------------------------------------------------------------------------------------------------------
 
                 //Add displacements to nodes, to get new coordinates
 
