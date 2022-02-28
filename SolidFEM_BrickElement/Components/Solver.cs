@@ -396,16 +396,28 @@ namespace SolidFEM_BrickElement
         {
             double val = 1.0 / Math.Sqrt(3);
 
-            Point3d pt_1 = new Point3d(val, val, val);
-            Point3d pt_2 = new Point3d(-val, val, val);
-            Point3d pt_3 = new Point3d(val, -val, val);
-            Point3d pt_4 = new Point3d(val, val, -val);
+            //Point3d pt_1 = new Point3d(val, val, val);
+            //Point3d pt_2 = new Point3d(-val, val, val);
+            //Point3d pt_3 = new Point3d(val, -val, val);
+            //Point3d pt_4 = new Point3d(val, val, -val);
+            //Point3d pt_5 = new Point3d(-val, -val, val);
+            //Point3d pt_6 = new Point3d(val, -val, -val);
+            //Point3d pt_7 = new Point3d(-val, val, -val);
+            //Point3d pt_8 = new Point3d(-val, -val, -val);
+
+
+            Point3d pt_1 = new Point3d(-val, -val, -val);
+            Point3d pt_2 = new Point3d(val, -val, -val);
+            Point3d pt_3 = new Point3d(val, val, -val);
+            Point3d pt_4 = new Point3d(-val, val, -val);
             Point3d pt_5 = new Point3d(-val, -val, val);
-            Point3d pt_6 = new Point3d(val, -val, -val);
-            Point3d pt_7 = new Point3d(-val, val, -val);
-            Point3d pt_8 = new Point3d(-val, -val, -val);
+            Point3d pt_6 = new Point3d(val, -val, val);
+            Point3d pt_7 = new Point3d(val, val, val);
+            Point3d pt_8 = new Point3d(-val, val, val);
 
             List<Point3d> dummy_list = new List<Point3d> { pt_1, pt_2, pt_3, pt_4, pt_5, pt_6, pt_7, pt_8 };
+            Point3d ptOrig = new Point3d(0, 0, 0);
+            List<Point3d> dummy_list1 = new List<Point3d> { ptOrig };
             return dummy_list;
         }
 
@@ -445,7 +457,7 @@ namespace SolidFEM_BrickElement
 
                 Matrix<double> K = Matrix<double>.Build.Dense(24, 24);
 
-                for (int j = 0; j < 8; j++)
+                for (int j = 0; j < dummy_list.Count; j++)
                 {
                     var integrand = ConstructStiffnessMatrix(_nodes, material, dummy_list[j]);
                     Matrix<double> k = integrand.Item1;
@@ -563,6 +575,65 @@ namespace SolidFEM_BrickElement
 
                 //Calculate stresses and strains
 
+                // (1x1x1) sampling pt ------------------------------------------------------------------------------------------------------------- alternative 1
+
+                //Point3d stressSamplingPt = new Point3d(0, 0, 0);
+
+                //var integrand1 = ConstructStiffnessMatrix(_nodes, material, stressSamplingPt);
+                //Matrix<double> B = integrand1.Item2;
+                //Matrix<double> C = integrand1.Item3;
+
+                //Matrix<double> strainAtSamplingPt = B * v;
+                //Matrix<double> stressAtSamplingPt = C * strainAtSamplingPt;
+
+                //// shape function for mid node??
+
+                //Matrix<double> strainAtNodes = strainAtSamplingPt;
+                //Matrix<double> stressAtNodes = stressAtSamplingPt;
+
+                //strain_list.Add(strainAtNodes);
+                //stress_list.Add(stressAtNodes);
+
+                // (2x2x2) samplingpoints ----------------------------------------------------------------------------------------------------------- alternative 2
+
+
+                //Matrix<double> strainAtSamplingPoints = Matrix<double>.Build.Dense(6, 8);
+                //Matrix<double> stressAtSamplingPoints = Matrix<double>.Build.Dense(6, 8);
+
+                //for (int j = 0; j < 8; j++)
+                //{
+                //    var integrand1 = ConstructStiffnessMatrix(_nodes, material, dummy_list[j]);
+                //    Matrix<double> B = integrand1.Item2;
+                //    Matrix<double> C = integrand1.Item3;
+                //    Matrix<double> strainAtSamplingPt = B * v;
+                //    Matrix<double> stressAtSamplingPt = C * strainAtSamplingPt;
+
+                //    strainAtSamplingPoints.SetSubMatrix(0, j, strainAtSamplingPt);
+                //    stressAtSamplingPoints.SetSubMatrix(0, j, stressAtSamplingPt);
+                //}
+
+                //Matrix<double> strainAtNodes = Matrix<double>.Build.Dense(6, 8);
+                //Matrix<double> stressAtNodes = Matrix<double>.Build.Dense(6, 8);
+
+                //for (int k = 0; k < 8; k++)
+                //{
+                //    Point3d genCoord = getGenCoords(k);
+                //    Matrix<double> shapeFunc = GetShapeFunctions(8, genCoord.X * Math.Sqrt(3), genCoord.Y * Math.Sqrt(3), genCoord.Z * Math.Sqrt(3));
+                //    Matrix<double> strainAtNode = shapeFunc.Multiply(strainAtSamplingPoints.Transpose());
+                //    Matrix<double> strainAtNodeT = strainAtNode.Transpose();
+                //    Matrix<double> stressAtNode = shapeFunc.Multiply(stressAtSamplingPoints.Transpose());
+                //    Matrix<double> stressAtNodeT = stressAtNode.Transpose();
+
+                //    strainAtNodes.SetSubMatrix(0, k, strainAtNodeT);
+                //    stressAtNodes.SetSubMatrix(0, k, stressAtNodeT);
+
+                //}
+                //strain_list.Add(strainAtNodes);
+                //stress_list.Add(stressAtNodes);
+
+                //-------------------------------------------------------------------------------------------------------------------------------------- old code
+
+
                 Matrix<double> gauss_strains = Matrix<double>.Build.Dense(6, 8);
                 Matrix<double> gauss_stresses = Matrix<double>.Build.Dense(6, 8);
 
@@ -593,7 +664,7 @@ namespace SolidFEM_BrickElement
 
                 strain_list.Add(elem_strains);
                 stress_list.Add(elem_stresses);
-
+                // ----------------------------------------------------------------------------------------------------------------------------------------------------------
 
                 //Add displacements to nodes, to get new coordinates
 
