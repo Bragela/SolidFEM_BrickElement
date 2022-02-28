@@ -29,7 +29,7 @@ namespace SolidFEM_BrickElement.Components
         {
             pManager.AddPointParameter("Displ Points", "DPs", "Displacement points", GH_ParamAccess.tree);
             pManager.AddNumberParameter("Stress", "Str", "Stress", GH_ParamAccess.tree);
-            pManager.AddNumberParameter("Stress direction","D","Direction of stress to preview",GH_ParamAccess.tree);  
+            pManager.AddNumberParameter("Stress direction","D","Direction of stress to preview",GH_ParamAccess.item);  
         }
 
         /// <summary>
@@ -52,7 +52,8 @@ namespace SolidFEM_BrickElement.Components
 
             GH_Structure<GH_Point> gh_nodes = new GH_Structure<GH_Point>();
             GH_Structure<GH_Number> gh_stresses = new GH_Structure<GH_Number>();
-            int num = 0;
+            GH_Number num = new GH_Number();
+   
 
             if (!DA.GetDataTree(0, out gh_nodes)) return;
             if (!DA.GetDataTree(1, out gh_stresses)) return;
@@ -152,7 +153,7 @@ namespace SolidFEM_BrickElement.Components
 
             // Set direction (dir) -> x = 0, y = 1, z = 2 , xy = 3, yz = 4, zx = 5, Mises = 6
 
-            int dir = num;
+            int dir = (int) num.Value;
 
             double stress_max = stress_dir[dir].Max();
             double stress_min = stress_dir[dir].Min();
@@ -236,7 +237,7 @@ namespace SolidFEM_BrickElement.Components
                 mesh.Faces.AddFace(new MeshFace(3, 0, 4, 7));
                 mesh.Faces.AddFace(new MeshFace(4, 5, 6, 7));
 
-                mesh.VertexColors.CreateMonotoneMesh(Color.FromArgb(170, red_val, green_val,0 ));
+                //mesh.VertexColors.CreateMonotoneMesh(Color.FromArgb(170, red_val, green_val,0 ));
 
                 meshes.Add(mesh);
 
