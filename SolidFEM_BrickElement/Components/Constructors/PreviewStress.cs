@@ -237,7 +237,7 @@ namespace SolidFEM_BrickElement.Components
                 mesh.Faces.AddFace(new MeshFace(3, 0, 4, 7));
                 mesh.Faces.AddFace(new MeshFace(4, 5, 6, 7));
 
-                //mesh.VertexColors.CreateMonotoneMesh(Color.FromArgb(170, red_val, green_val,0 ));
+                mesh.VertexColors.CreateMonotoneMesh(Color.FromArgb(170, red_val, green_val,0 ));
 
                 meshes.Add(mesh);
 

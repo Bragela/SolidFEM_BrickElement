@@ -374,6 +374,27 @@ namespace SolidFEM_BrickElement
             return tree;
         }
 
+        private GH_Structure<GH_Number> ListMatrixToTreeNumber2(List<Matrix<double>> list)
+        {
+            GH_Structure<GH_Number> tree = new GH_Structure<GH_Number>();
+            for (int i = 0; i < list.Count; i++) //Going through list
+            {
+                Matrix<double> list_mat = list[i];
+                for (int j = 0; j < list_mat.ColumnCount; j++) //Going through each column
+                {
+                    for (int l = 0; l < list_mat.RowCount; l++) //Going thrugh each row
+                    {
+                        GH_Path path = new GH_Path(i);
+                        GH_Number val = new GH_Number();
+                        GH_Convert.ToGHNumber(list_mat[l, j], 0, ref val);
+                        tree.Append(val, path);
+                    }
+                }
+            }
+
+            return tree;
+        }
+
         private GH_Structure<GH_Point> ListListToTreePoint(List<List<Point3d>> list)
         {
             GH_Structure<GH_Point> tree = new GH_Structure<GH_Point>();
@@ -533,6 +554,8 @@ namespace SolidFEM_BrickElement
             int nNodes = nodes.Count;
             List<Point3d> dummy_list = getDummyPoints();
 
+            Dictionary<int, List<Matrix<double>>> nodal_stresses = new Dictionary<int, List<Matrix<double>>>(); 
+
             for (int i = 0; i < elems.Count; i++)
             {
                 List<NodeClass> _nodes = elems[i].Nodes;
@@ -577,69 +600,81 @@ namespace SolidFEM_BrickElement
 
                 // (1x1x1) sampling pt ------------------------------------------------------------------------------------------------------------- alternative 1
 
-                Point3d stressSamplingPt = new Point3d(0, 0, 0);
+                //Point3d stressSamplingPt = new Point3d(0, 0, 0);
 
-                var integrand1 = ConstructStiffnessMatrix(_nodes, material, stressSamplingPt);
-                Matrix<double> B = integrand1.Item2;
-                Matrix<double> C = integrand1.Item3;
+                //var integrand1 = ConstructStiffnessMatrix(_nodes, material, stressSamplingPt);
+                //Matrix<double> B = integrand1.Item2;
+                //Matrix<double> C = integrand1.Item3;
 
-                Matrix<double> strainAtSamplingPt = B * v;
-                Matrix<double> stressAtSamplingPt = C * strainAtSamplingPt;
+                //Matrix<double> strainAtSamplingPt = B * v;
+                //Matrix<double> stressAtSamplingPt = C * strainAtSamplingPt;
 
-                // shape function for mid node?? N = 1
-
-                Matrix<double> strainAtNodes = Matrix<double>.Build.Dense(6, 8);
-                Matrix<double> stressAtNodes = Matrix<double>.Build.Dense(6, 8);
-
-
-                for (int k = 0; k < 8; k++)
-                {
-
-                    strainAtNodes.SetSubMatrix(0, k, strainAtSamplingPt);
-                    stressAtNodes.SetSubMatrix(0, k, stressAtSamplingPt);
-
-                }
-
-
-                strain_list.Add(strainAtNodes);
-                stress_list.Add(stressAtNodes);
-
-                // (2x2x2) samplingpoints ----------------------------------------------------------------------------------------------------------- alternative 2
-
-
-                //Matrix<double> strainAtSamplingPoints = Matrix<double>.Build.Dense(6, 8);
-                //Matrix<double> stressAtSamplingPoints = Matrix<double>.Build.Dense(6, 8);
-
-                //for (int j = 0; j < 8; j++)
-                //{
-                //    var integrand1 = ConstructStiffnessMatrix(_nodes, material, dummy_list[j]);
-                //    Matrix<double> B = integrand1.Item2;
-                //    Matrix<double> C = integrand1.Item3;
-                //    Matrix<double> strainAtSamplingPt = B * v;
-                //    Matrix<double> stressAtSamplingPt = C * strainAtSamplingPt;
-
-                //    strainAtSamplingPoints.SetSubMatrix(0, j, strainAtSamplingPt);
-                //    stressAtSamplingPoints.SetSubMatrix(0, j, stressAtSamplingPt);
-                //}
+                //// shape function for mid node?? N = 1
 
                 //Matrix<double> strainAtNodes = Matrix<double>.Build.Dense(6, 8);
                 //Matrix<double> stressAtNodes = Matrix<double>.Build.Dense(6, 8);
 
+
                 //for (int k = 0; k < 8; k++)
                 //{
-                //    Point3d genCoord = getGenCoords(k);
-                //    Matrix<double> shapeFunc = GetShapeFunctions(8, genCoord.X * Math.Sqrt(3), genCoord.Y * Math.Sqrt(3), genCoord.Z * Math.Sqrt(3));
-                //    Matrix<double> strainAtNode = shapeFunc.Multiply(strainAtSamplingPoints.Transpose());
-                //    Matrix<double> strainAtNodeT = strainAtNode.Transpose();
-                //    Matrix<double> stressAtNode = shapeFunc.Multiply(stressAtSamplingPoints.Transpose());
-                //    Matrix<double> stressAtNodeT = stressAtNode.Transpose();
 
-                //    strainAtNodes.SetSubMatrix(0, k, strainAtNodeT);
-                //    stressAtNodes.SetSubMatrix(0, k, stressAtNodeT);
+                //    strainAtNodes.SetSubMatrix(0, k, strainAtSamplingPt);
+                //    stressAtNodes.SetSubMatrix(0, k, stressAtSamplingPt);
 
                 //}
+
+
                 //strain_list.Add(strainAtNodes);
                 //stress_list.Add(stressAtNodes);
+
+                // (2x2x2) samplingpoints ----------------------------------------------------------------------------------------------------------- alternative 2
+
+
+                Matrix<double> strainAtSamplingPoints = Matrix<double>.Build.Dense(6, 8);
+                Matrix<double> stressAtSamplingPoints = Matrix<double>.Build.Dense(6, 8);
+
+                for (int j = 0; j < 8; j++)
+                {
+                    var integrand1 = ConstructStiffnessMatrix(_nodes, material, dummy_list[j]);
+                    Matrix<double> B = integrand1.Item2;
+                    Matrix<double> C = integrand1.Item3;
+                    Matrix<double> strainAtSamplingPt = B * v;
+                    Matrix<double> stressAtSamplingPt = C * strainAtSamplingPt;
+
+                    strainAtSamplingPoints.SetSubMatrix(0, j, strainAtSamplingPt);
+                    stressAtSamplingPoints.SetSubMatrix(0, j, stressAtSamplingPt);
+                }
+
+                Matrix<double> strainAtNodes = Matrix<double>.Build.Dense(6, 8);
+                Matrix<double> stressAtNodes = Matrix<double>.Build.Dense(6, 8);
+
+                for (int k = 0; k < 8; k++)
+                {
+                    Point3d genCoord = getGenCoords(k);
+                    Matrix<double> shapeFunc = GetShapeFunctions(8, genCoord.X * Math.Sqrt(3), genCoord.Y * Math.Sqrt(3), genCoord.Z * Math.Sqrt(3));
+                    Matrix<double> strainAtNode = shapeFunc.Multiply(strainAtSamplingPoints.Transpose());
+                    Matrix<double> strainAtNodeT = strainAtNode.Transpose();
+                    Matrix<double> stressAtNode = shapeFunc.Multiply(stressAtSamplingPoints.Transpose());
+                    Matrix<double> stressAtNodeT = stressAtNode.Transpose();
+
+                    strainAtNodes.SetSubMatrix(0, k, strainAtNodeT);
+                    stressAtNodes.SetSubMatrix(0, k, stressAtNodeT);
+
+                    int gID = elems[i].Nodes[k].GlobalID;
+
+                    if (nodal_stresses.ContainsKey(gID))
+                    {
+                        nodal_stresses[gID].Append(stressAtNode);
+                    }
+                    else
+                    {
+                        nodal_stresses.Add(elems[i].Nodes[k].GlobalID, new List<Matrix<double>> { stressAtNode });
+                    }
+                    
+
+                }
+                strain_list.Add(strainAtNodes);
+                stress_list.Add(stressAtNodes);
 
                 //-------------------------------------------------------------------------------------------------------------------------------------- old code
 
@@ -692,9 +727,28 @@ namespace SolidFEM_BrickElement
                 new_pts_list.Add(dispPts);
             }
 
+
+            List<Matrix<double>> nodal_stresses_list = new List<Matrix<double>>();
+
+            for (int i = 0; i < nNodes; i++)
+            {
+                List<Matrix<double>> stresses = nodal_stresses[i];
+
+                Matrix<double> stress = Matrix<double>.Build.Dense(1, 6);
+
+                for (int j = 0; j < stresses.Count; j++)
+                {
+                    stress += stresses[j];
+                }
+
+                nodal_stresses_list.Add(stress/stresses.Count);
+            }
+
+            
             //Processing results
 
             GH_Structure<GH_Number> _disps = ListMatrixToTreeNumber(disp_list);
+            //GH_Structure<GH_Number> _stresses = ListMatrixToTreeNumber2(nodal_stresses_list);
             GH_Structure<GH_Number> _stresses = ListMatrixToTreeNumber(stress_list);
             GH_Structure<GH_Number> _strains = ListMatrixToTreeNumber(strain_list);
             GH_Structure<GH_Point> _npts = ListListToTreePoint(new_pts_list);
