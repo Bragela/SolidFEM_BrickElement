@@ -7,6 +7,7 @@ using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino.Geometry;
+using MathNet.Numerics;
 
 namespace SolidFEM_BrickElement.Components
 {
@@ -39,7 +40,8 @@ namespace SolidFEM_BrickElement.Components
         {
             pManager.AddMeshParameter("Stress mesh", "Stress mesh", "Colored mesh by stress values", GH_ParamAccess.list);
             pManager.AddNumberParameter("TestNumber", "NT", "Numbertest", GH_ParamAccess.list);
-            pManager.AddTextParameter("","","",GH_ParamAccess.item);
+            pManager.AddTextParameter("Info","I","",GH_ParamAccess.item);
+            pManager.AddPointParameter("Point", "P", "Point of max and min value", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -159,22 +161,36 @@ namespace SolidFEM_BrickElement.Components
             double stress_min = stress_dir[dir].Min();
             double stress_range = stress_max - stress_min;
 
+            var maxIndex = stress_dir[dir].IndexOf(stress_dir[dir].Max());
+            int maxInd1 = (maxIndex / 8);
+            int maxInd2 = (maxIndex % 8);
+
+            var minIndex = stress_dir[dir].IndexOf(stress_dir[dir].Min());
+            int minInd1 = (minIndex / 8);
+            int minInd2 = (minIndex % 8);
+
             info.Add(stress_max.ToString());
             info.Add(stress_min.ToString());
             info.Add(stress_Mises.ToString());
-       
+
+            Point3d maxPt = DisPts[maxInd1][maxInd2];
+            Point3d minPt = DisPts[minInd1][minInd2];
+
+            List<Point3d> pts = new List<Point3d>() { maxPt,minPt};
+
+
 
             //Constructing mesh from displacement points and giving color from stress values
             List <Mesh> meshes = new List<Mesh>();
             List<double> percents = new List<double>();
-    
+
 
             for (int i = 0; i < DisPts.Count; i++)
             {
-                
+
                 List<Point3d> ElNodes = DisPts[i];
 
-                int j = ElNodes.Count*i;
+                int j = ElNodes.Count * i;
 
                 Mesh mesh = new Mesh();
 
@@ -184,33 +200,33 @@ namespace SolidFEM_BrickElement.Components
 
                 mesh.Vertices.Add(ElNodes[1]);
                 //double str1 = stresses[j+1][dir];
-                double str1_dir = stress_dir[dir][j+1];
+                double str1_dir = stress_dir[dir][j + 1];
 
                 mesh.Vertices.Add(ElNodes[2]);
                 //double str2 = stresses[j+2][dir];
-                double str2_dir = stress_dir[dir][j+2];
+                double str2_dir = stress_dir[dir][j + 2];
 
                 mesh.Vertices.Add(ElNodes[3]);
                 //double str3 = stresses[j+3][dir];
-                double str3_dir = stress_dir[dir][j+3];
+                double str3_dir = stress_dir[dir][j + 3];
 
                 mesh.Vertices.Add(ElNodes[4]);
                 //double str4 = stresses[j+4][dir];
-                double str4_dir = stress_dir[dir][j+4];
+                double str4_dir = stress_dir[dir][j + 4];
 
                 mesh.Vertices.Add(ElNodes[5]);
                 //double str5 = stresses[j+5][dir];
-                double str5_dir = stress_dir[dir][j+5];
+                double str5_dir = stress_dir[dir][j + 5];
 
                 mesh.Vertices.Add(ElNodes[6]);
                 //double str6 = stresses[j+6][dir];
-                double str6_dir = stress_dir[dir][j+6];
+                double str6_dir = stress_dir[dir][j + 6];
 
                 mesh.Vertices.Add(ElNodes[7]);
-               // double str7 = stresses[j+7][dir];
-                double str7_dir = stress_dir[dir][j+7];
+                // double str7 = stresses[j+7][dir];
+                double str7_dir = stress_dir[dir][j + 7];
 
-               // double str_avg = (str0+str1+str2+str3+str4+str5+str6+str7)/ ElNodes.Count;
+                // double str_avg = (str0+str1+str2+str3+str4+str5+str6+str7)/ ElNodes.Count;
                 double str_dir_avg = (str0_dir + str1_dir + str2_dir + str3_dir + str4_dir + str5_dir + str6_dir + str7_dir) / ElNodes.Count;
 
                 //double str_pos = str_avg + Math.Abs(stress_min);
@@ -224,9 +240,9 @@ namespace SolidFEM_BrickElement.Components
 
 
 
-               
+
                 percents.Add(str_dir_rgb);
-                
+
 
 
 
@@ -237,18 +253,20 @@ namespace SolidFEM_BrickElement.Components
                 mesh.Faces.AddFace(new MeshFace(3, 0, 4, 7));
                 mesh.Faces.AddFace(new MeshFace(4, 5, 6, 7));
 
-                mesh.VertexColors.CreateMonotoneMesh(Color.FromArgb(170, red_val, green_val,0 ));
+                //mesh.VertexColors.CreateMonotoneMesh(Color.FromArgb(170, red_val, green_val,0 ));
 
                 meshes.Add(mesh);
 
             }
 
-            
+
             //output______________________________________________________________
-            
+
             DA.SetDataList(0, meshes);
             DA.SetDataList(1, percents);
             DA.SetDataList(2, info);
+            DA.SetDataList(3, pts);
+            
 
         }
 
