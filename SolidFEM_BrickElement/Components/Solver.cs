@@ -442,7 +442,7 @@ namespace SolidFEM_BrickElement
             return dummy_list;
         }
 
-        private Matrix<double> ConstructGlobalStiffnessMatrix(List<ElementClass> elems, int nDofs, int nNodes, MaterialClass material)
+        private Matrix<double> ConstructGlobalStiffnessMatrix(List<ElementClass> elems, int nDofs, int nNodes, MaterialClass material)  
         {
 
             Matrix<double> bigK = Matrix<double>.Build.Dense(nDofs * nNodes, nDofs * nNodes);

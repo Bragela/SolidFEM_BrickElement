@@ -42,7 +42,7 @@ namespace SolidFEM_BrickElement
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
             // pManager.AddMeshParameter("Mesh", "M", "Mesh from loft", GH_ParamAccess.list);
-            pManager.AddGenericParameter("Elements", "E", "Elements from loft", GH_ParamAccess.list);
+            pManager.AddGenericParameter("Meshes", "M", "Meshes from loft", GH_ParamAccess.list);
           
 
         }
@@ -174,6 +174,7 @@ namespace SolidFEM_BrickElement
             // create elements with elementID, Nodes(with globalID and LocalID ) and mesh
 
             List<ElementClass> elementList = new List<ElementClass>();
+            List<Mesh> meshlist = new List<Mesh>();
           
             int globalElementID = 0;
             for (int i = 0; i < levels.Count - 1; i++)
@@ -211,6 +212,8 @@ namespace SolidFEM_BrickElement
                         mesh.Faces.AddFace(new MeshFace(2, 3, 7, 6));
                         mesh.Faces.AddFace(new MeshFace(3, 0, 4, 7));
                         mesh.Faces.AddFace(new MeshFace(4, 5, 6, 7));
+
+                        meshlist.Add(mesh);
 
                         elementList.Add(new ElementClass(globalElementID, nodesElem, mesh));
                         globalElementID++;
